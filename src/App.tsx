@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from 'antd';
 import {
   HomeOutlined,
@@ -30,6 +30,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function MainLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const menuItems = [
     {
@@ -92,14 +93,14 @@ function MainLayout() {
       }}>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/customers/new" element={<CreateCustomer />} />
-          <Route path="/invoices" element={<InvoiceList />} />
-          <Route path="/invoices/new" element={<CreateInvoice />} />
-          <Route path="/invoices/:id" element={<InvoiceDetail />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/profile" element={<UpdateProfile isEditing={false} setIsEditing={() => {}} />} />
-          <Route path="/customers" element={<CustomerList />} />
-          <Route path="/companies/new" element={<CreateCompany />} />
+          <Route path="customers/new" element={<CreateCustomer />} />
+          <Route path="invoices" element={<InvoiceList />} />
+          <Route path="invoices/new" element={<CreateInvoice />} />
+          <Route path="invoices/:id" element={<InvoiceDetail />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="profile" element={<UpdateProfile isEditing={false} setIsEditing={() => {}} />} />
+          <Route path="customers" element={<CustomerList />} />
+          <Route path="companies/new" element={<CreateCompany />} />
         </Routes>
       </Content>
     </Layout>
