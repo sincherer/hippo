@@ -10,6 +10,11 @@ const UserProfile = () => {
 
   const handleLogout = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        message.error('No active session found');
+        return;
+      }
       await signOut();
       message.success('Logged out successfully');
     } catch (error) {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Form, Input, Button, Card, message, Typography } from 'antd';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import hippoLogo from './assets/hippo.webp';
 
 const { Text } = Typography;
 
@@ -35,11 +36,25 @@ const Login = () => {
       justifyContent: 'center',
       alignItems: 'center',
       minHeight: '100vh',
-      background: '#f0f2f5',
+      background: '#fffff',
       width: '100vw',
     }}>
       <Card style={{ width: 400 }}>
-        <h2 style={{ textAlign: 'center', marginBottom: 24 }}>Login to Invoice Maker</h2>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img
+            src={hippoLogo}
+            alt="Hippo Logo"
+            style={{
+              width: 40,
+              height: 40,
+              objectFit: 'contain',
+              borderRadius: 50,
+              cursor: 'pointer'
+            }}
+            onClick={() => navigate('/')}
+          />
+          <h2 style={{ textAlign: 'center', marginBottom: 24 }}>Login to Hippo</h2>
+        </div>
         <Form
           name="login"
           layout="vertical"
