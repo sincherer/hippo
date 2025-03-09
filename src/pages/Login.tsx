@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Form, Input, Button, Card, message, Typography } from 'antd';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import hippoLogo from './assets/hippo.webp';
+import hippoLogo from '../assets/hippo.webp';
 
 const { Text } = Typography;
 

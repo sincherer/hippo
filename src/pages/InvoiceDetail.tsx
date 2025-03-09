@@ -73,6 +73,8 @@ const InvoiceDetailContent = () => {
   const [loading, setLoading] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+  const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
   const [paymentForm] = Form.useForm();
 
   const fetchInvoiceDetails = useCallback(async () => {
@@ -247,6 +249,117 @@ const InvoiceDetailContent = () => {
     }
   };
 
+  const handlePreviewPDF = async () => {
+    if (!invoice) return;
+    
+    try {
+      setLoading(true);
+      
+      // Reuse the same data fetching logic as handleDownloadPDF
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('email, phone, address')
+        .eq('id', invoice?.customer_id)
+        .single();
+
+      if (customerError) throw customerError;
+
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .select('name, address, bank_name, bank_account, email, phone, logo_url')
+        .eq('id', invoice.company_id)
+        .single();
+
+      if (companyError) throw companyError;
+
+      // Handle logo preloading
+      if (companyData.logo_url) {
+        await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0);
+              companyData.logo_url = canvas.toDataURL('image/png');
+              resolve(null);
+            } else {
+              reject(new Error('Failed to get canvas context'));
+            }
+          };
+          img.onerror = () => {
+            console.warn('Failed to load company logo');
+            companyData.logo_url = undefined;
+            resolve(null);
+          };
+          img.src = companyData.logo_url;
+        });
+      }
+
+      const invoicePDFComponent = (
+        <InvoicePDF
+          invoice={{
+            invoice_number: invoice.invoice_number,
+            date: invoice.date,
+            due_date: invoice.due_date,
+            subtotal: invoice.subtotal,
+            tax_rate: invoice.tax_rate,
+            tax_amount: invoice.tax_amount,
+            total: invoice.total
+          }}
+          company={companyData}
+          customer={{
+            name: invoice.customer_name || '',
+            address: customerData?.address || '',
+            email: customerData?.email || '',
+            phone: customerData?.phone || '',
+          }}
+          items={items.map(item => ({
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            amount: item.amount
+          }))}
+        />
+      );
+
+      const htmlString = ReactDOMServer.renderToString(invoicePDFComponent);
+
+      const container = document.createElement('div');
+      container.innerHTML = htmlString;
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '-9999px';
+      document.body.appendChild(container);
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const canvas = await html2canvas(container.firstChild as HTMLElement, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+      document.body.removeChild(container);
+
+      const imgData = canvas.toDataURL('image/png', 1.0);
+      setPreviewUrl(imgData);
+      setIsPreviewModalVisible(true);
+      setLoading(false);
+
+    } catch (error) {
+      console.error('Error generating PDF preview:', error);
+      message.error('Failed to generate PDF preview');
+      setLoading(false);
+    }
+  };
+
   const columns = [
     { title: 'Description', dataIndex: 'description' },
     { title: 'Quantity', dataIndex: 'quantity' },
@@ -348,67 +461,90 @@ const InvoiceDetailContent = () => {
           />
         </Card>
 
-        <Space>
-          <Button type="primary" onClick={handleDownloadPDF} loading={loading}>Download PDF</Button>
-          <Button 
-            onClick={() => {
-              if (invoice.status === 'paid') {
-                // Handle unpaid status directly
-                handleStatusUpdate('unpaid');
-              } else {
-                // Show payment modal for paid status
-                setIsPaymentModalVisible(true);
-                paymentForm.resetFields();
-              }
-            }}
-            loading={statusLoading}
-            type={invoice.status === 'paid' ? 'default' : 'default'}
-            icon={invoice.status === 'paid' ? null : <CheckOutlined />}
-            danger={invoice.status === 'paid'}
-          >
-            {invoice.status === 'paid' ? 'Mark as Unpaid' : 'Mark as Paid'}
-          </Button>
-
-          <Modal
-            title="Payment Details"
-            open={isPaymentModalVisible}
-            onOk={() => paymentForm.submit()}
-            onCancel={() => setIsPaymentModalVisible(false)}
-            confirmLoading={statusLoading}
-          >
-            <Form
-              form={paymentForm}
-              layout="vertical"
-              onFinish={async (values) => {
-                await handleStatusUpdate('paid', values.payment_method, values.remarks);
-                setIsPaymentModalVisible(false);
+        <Space direction="vertical" style={{ width: '100%' }} size="large">
+          <Space>
+            <Button type="primary" onClick={handleDownloadPDF} loading={loading}>Download PDF</Button>
+            <Button onClick={handlePreviewPDF} loading={loading}>Preview PDF</Button>
+            <Button 
+              onClick={() => {
+                if (invoice.status === 'paid') {
+                  handleStatusUpdate('unpaid');
+                } else {
+                  setIsPaymentModalVisible(true);
+                  paymentForm.resetFields();
+                }
               }}
+              loading={statusLoading}
+              type={invoice.status === 'paid' ? 'default' : 'default'}
+              icon={invoice.status === 'paid' ? null : <CheckOutlined />}
+              danger={invoice.status === 'paid'}
             >
-              <Form.Item
-                name="payment_method"
-                label="Payment Method"
-                rules={[{ required: true, message: 'Please select payment method' }]}
-              >
-                <Select>
-                  <Select.Option value="cash">Cash</Select.Option>
-                  <Select.Option value="check">Check</Select.Option>
-                  <Select.Option value="bank">Bank Transfer</Select.Option>
-                  <Select.Option value="paypal">PayPal</Select.Option>
-                  <Select.Option value="cashapp">Cash App</Select.Option>
-                </Select>
-              </Form.Item>
-              <Form.Item
-                name="remarks"
-                label="Remarks"
-              >
-                <Input.TextArea rows={4} />
-              </Form.Item>
-            </Form>
-          </Modal>
+              {invoice.status === 'paid' ? 'Mark as Unpaid' : 'Mark as Paid'}
+            </Button>
+          </Space>
         </Space>
-      </Space>
-    </div>
-  );
+
+        <Modal
+          title="PDF Preview"
+          open={isPreviewModalVisible}
+          onCancel={() => setIsPreviewModalVisible(false)}
+          width={1000}
+          footer={[
+            <Button key="close" onClick={() => setIsPreviewModalVisible(false)}>
+              Close
+            </Button>,
+            <Button key="download" type="primary" onClick={handleDownloadPDF} loading={loading}>
+              Download
+            </Button>
+          ]}
+        >
+          {previewUrl && (
+            <div style={{ width: '100%', overflowX: 'auto', textAlign: 'center' }}>
+              <img src={previewUrl} alt="Invoice Preview" style={{ maxWidth: '100%' }} />
+            </div>
+          )}
+        </Modal>
+
+        <Modal
+              title="Payment Details"
+              open={isPaymentModalVisible}
+              onOk={() => paymentForm.submit()}
+              onCancel={() => setIsPaymentModalVisible(false)}
+              confirmLoading={statusLoading}
+            >
+              <Form
+                form={paymentForm}
+                layout="vertical"
+                onFinish={async (values) => {
+                  await handleStatusUpdate('paid', values.payment_method, values.remarks);
+                  setIsPaymentModalVisible(false);
+                }}
+              >
+                <Form.Item
+                  name="payment_method"
+                  label="Payment Method"
+                  rules={[{ required: true, message: 'Please select payment method' }]}
+                >
+                  <Select>
+                    <Select.Option value="cash">Cash</Select.Option>
+                    <Select.Option value="check">Check</Select.Option>
+                    <Select.Option value="bank">Bank Transfer</Select.Option>
+                    <Select.Option value="paypal">PayPal</Select.Option>
+                    <Select.Option value="cashapp">Cash App</Select.Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item
+                  name="remarks"
+                  label="Remarks"
+                >
+                  <Input.TextArea rows={4} />
+                </Form.Item>
+              </Form>
+            </Modal>
+          
+        </Space>
+      </div>
+    );
 };
 
 const InvoiceDetail = () => {
