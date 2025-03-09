@@ -1,7 +1,9 @@
-import { Form, Input, Button, Card, message } from 'antd';
+import { Form, Input, Button, Card, message, Typography } from 'antd';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../config/supabase';
+
+const { Text } = Typography;
 
 interface SignUpForm {
   email: string;
@@ -30,7 +32,7 @@ const SignUp = () => {
           data: {
             display_name: values.displayName
           },
-          emailRedirectTo: `${window.location.origin}/dashboard`
+          emailRedirectTo: `${window.location.origin}/`
         }
       });
   
@@ -101,6 +103,10 @@ const SignUp = () => {
             </Button>
           </Form.Item>
         </Form>
+        <div style={{ textAlign: 'center' }}>
+            <Text>Already have an account? </Text>
+            <Link to="/login">Login now</Link>
+          </div>
       </Card>
     </div>
   );
