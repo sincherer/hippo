@@ -251,7 +251,13 @@ const InvoiceList = () => {
               ]}
             >
               <Card.Meta
-                avatar={invoice.company_logo ? <Avatar size={64} src={invoice.company_logo} /> : null}
+                avatar={invoice.company_logo ? (
+                  <Avatar size={64} src={invoice.company_logo} />
+                ) : (
+                  <Avatar size={64} style={{ backgroundColor: '#1890ff' }}>
+                    {invoice.company_name ? invoice.company_name.charAt(0).toUpperCase() : '?'}
+                  </Avatar>
+                )}
                 title={<Space direction="vertical" size={0}>
                   <div>{invoice.invoice_number}</div>
                   <Tag color={invoice.status === 'paid' ? 'green' : 'orange'}>

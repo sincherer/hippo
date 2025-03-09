@@ -10,6 +10,7 @@ interface Customer {
   name: string;
   email: string;
   phone: string;
+  address: string;
   user_id: string;
 }
 
@@ -159,7 +160,7 @@ const CustomerList = () => {
       <Space direction="horizontal" align="center" style={{ width: '100%', justifyContent: 'space-between', marginTop: '-16px' }} size="large">
         <h2 >Customer Management</h2>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsCreateModalVisible(true)}>
-          Add New Customer
+          New Customer
         </Button>
       </Space>
 
@@ -183,6 +184,7 @@ const CustomerList = () => {
                   <Space direction="vertical" style={{ width: '100%' }}>
                     <div><strong>Email:</strong> {customer.email}</div>
                     <div><strong>Phone:</strong> {customer.phone}</div>
+                    <div><strong>Address:</strong> {customer.address}</div>
                   </Space>
                 }
               />
@@ -204,6 +206,7 @@ const CustomerList = () => {
             <p><strong>Name:</strong> {selectedCustomer.name}</p>
             <p><strong>Email:</strong> {selectedCustomer.email}</p>
             <p><strong>Phone:</strong> {selectedCustomer.phone}</p>
+            <p><strong>Address:</strong>{selectedCustomer.address}</p>
           </div>
         )}
       </Modal>
@@ -245,6 +248,13 @@ const CustomerList = () => {
             rules={[{ required: true, message: 'Please input customer phone!' }]}
           >
             <Input />
+          </Form.Item>
+          <Form.Item
+            name="address"
+            label="Address"
+            rules={[{ required: false, message: 'Please input customer address!' }]}
+          >
+            <Input.TextArea rows={4} />
           </Form.Item>
         </Form>
       </Modal>
@@ -304,6 +314,13 @@ const CustomerList = () => {
             rules={[{ required: true, message: 'Please input customer phone!' }]}
           >
             <Input />
+          </Form.Item>
+          <Form.Item
+            label="Address"
+            name="address"
+            rules={[{ required: false, message: 'Please input customer address!' }]}
+          >
+            <Input.TextArea rows={4} />
           </Form.Item>
         </Form>
       </Modal>

@@ -1,11 +1,11 @@
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Layout } from 'antd';
 import {
-  HomeOutlined,
   FileOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
-
+import hippoLogo from './assets/hippo.webp';
+import styles from './App.module.css';
 import Dashboard from './pages/Dashboard';
 import CustomerList from './pages/CustomerList';
 import CreateCustomer from './pages/CreateCustomer';
@@ -35,18 +35,12 @@ function MainLayout() {
   const menuItems = [
     {
       key: '1',
-      icon: <HomeOutlined />,
-      label: 'Dashboard',
-      value: '/',
-    },
-    {
-      key: '2',
       icon: <FileOutlined />,
       label: 'Invoices',
       value: '/invoices',
     },
     {
-      key: '3',
+      key: '2',
       icon: <SettingOutlined />,
       label: 'Settings',
       value: '/settings',
@@ -66,14 +60,40 @@ function MainLayout() {
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        <div style={{ fontSize: '18px', fontWeight: 'bold' }}>Hippo</div>
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', margin: '0 48px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img
+              src={hippoLogo}
+              alt="Hippo Logo"
+              style={{
+                width: 40,
+                height: 40,
+                objectFit: 'contain',
+                borderRadius: 50,
+                cursor: 'pointer'
+              }}
+              onClick={() => navigate('/')}
+            />
+            <div
+              style={{
+                fontSize: '18px',
+                fontWeight: 'bold',
+                marginLeft: 8,
+                display: 'block',
+                cursor: 'pointer'
+              }}
+              className={styles.hippoText}
+              onClick={() => navigate('/')}
+            >
+              Hippo
+            </div>
+          </div>
           <Segmented
             options={menuItems.map(item => ({
               label: (
                 <div style={{ padding: '4px 0' }}>
                   {React.cloneElement(item.icon, { style: { marginRight: 4 } })}
-                  <span>{item.label}</span>
+                  <span className={styles.segmentedLabel}>{item.label}</span>
                 </div>
               ),
               value: item.value

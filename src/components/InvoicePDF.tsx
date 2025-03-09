@@ -163,15 +163,16 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, ite
                     style={{
                       width: '64px',
                       height: '64px',
-                      backgroundColor: '#f0f0f0',
+                      backgroundColor: '#d7cabe',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       marginRight: '8px',
-                      border: '1px solid #f0f0f0'
+                      border: '1px solid #f0f0f0',
+                      borderRadius : 50
                     }}
                   >
-                    <div style={{ color: '#666666', fontWeight: 'bold', fontSize: '24px' }}>
+                    <div style={{ color: '#000000', fontWeight: 'bold', fontSize: '24px' }}>
                       {company.name.charAt(0).toUpperCase()}
                     </div>
                   </div>
@@ -196,7 +197,7 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, ite
                 </div>
               </div>
             )}
-            <Title level={5} style={{ margin: 0, color: '#1890ff', fontSize: '14px' }}>{company.name}</Title>
+            <Title level={5} style={{ margin: 0, color: '#d7cabe', fontSize: '14px' }}>{company.name}</Title>
           </div>
           <div style={{ marginTop: '8px', fontSize: '12px', lineHeight: '1.2' }}>
             <Text>{customer.name}</Text><br />

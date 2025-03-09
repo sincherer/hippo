@@ -91,7 +91,7 @@ const Dashboard = () => {
   return (
     <div style={{ padding: '24px' }}>
       <h2>Dashboard</h2>
-      <p>Welcome, {user?.user_metadata?.display_name || user?.email}</p>
+      <p>🎉 Welcome to Hippo, {user?.user_metadata?.display_name || user?.email}</p>
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} md={12} lg={6}>
           <Card>

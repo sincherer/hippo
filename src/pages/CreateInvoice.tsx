@@ -29,13 +29,42 @@ interface InvoiceItem {
 const CreateInvoice = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [form] = Form.useForm();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [companies, setCompanies] = useState<{ id: string; name: string; }[]>([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [createCustomerModalVisible, setCreateCustomerModalVisible] = useState(false);
   const [createForm] = Form.useForm();
+  const [createCustomerForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
+  const handleCreateCustomerSubmit = async () => {
+    try {
+      setLoading(true);
+      const values = await createCustomerForm.validateFields();
+
+      const { error } = await supabase
+        .from('customers')
+        .insert([{
+          ...values,
+          company_id: selectedCompanyId,
+          user_id: user?.id
+        }]);
+
+      if (error) throw error;
+
+      message.success('Customer created successfully');
+      setCreateCustomerModalVisible(false);
+      createCustomerForm.resetFields();
+      fetchCustomers(selectedCompanyId);
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      message.error('Failed to create customer');
+    } finally {
+      setLoading(false);
+    }
+  };
   const handleCreateSubmit = async () => {
     try {
       setLoading(true);
@@ -125,7 +154,7 @@ const CreateInvoice = () => {
           user_id: user?.id,
           customer_id: values.customer_id,
           company_id: values.company_id,
-          status: 'draft',
+          status: 'unpaid',
           subtotal,
           tax_rate,
           tax_amount,
@@ -165,7 +194,12 @@ const CreateInvoice = () => {
     <div style={{ width: '100vw' }}>
       <h2>Create New Invoice</h2>
       
-        <Form style={{ paddingRight: '64px'}} layout="vertical" onFinish={onFinish}>
+        <Form 
+          form={form}
+          style={{ paddingRight: '64px'}} 
+          layout="vertical" 
+          onFinish={onFinish}
+        >
           <Form.Item
             label="Company"
             name="company_id"
@@ -175,7 +209,10 @@ const CreateInvoice = () => {
               placeholder="Select company" 
               size="large" 
               style={{ width: '100%' }}
-              onChange={(value) => setSelectedCompanyId(value)}
+              onChange={(value) => {
+                setSelectedCompanyId(value);
+                form.setFieldValue('company_id', value);
+              }}
             >
               {companies.map(company => (
                 <Select.Option key={company.id} value={company.id}>
@@ -185,7 +222,8 @@ const CreateInvoice = () => {
             </Select>
 
             <Button 
-                  type="primary" 
+                  type="default" 
+                  style={{ marginTop: '16px' }}
                   icon={<PlusOutlined />}
                   onClick={() => setCreateModalVisible(true)}
                 >
@@ -262,13 +300,13 @@ const CreateInvoice = () => {
           <Form.Item 
             label="Customer" 
             name="customer_id" 
-            rules={[{ required: true, message: 'Please select a customer!' }]}
-          >
+            rules={[{ required: true, message: 'Please select a customer!' }]}>
             <Select 
               placeholder="Select customer" 
               size="large" 
               style={{ width: '100%' }}
               disabled={!selectedCompanyId}
+              onChange={(value) => form.setFieldValue('customer_id', value)}
             >
               {customers.map(customer => (
                 <Select.Option key={customer.id} value={customer.id}>
@@ -276,6 +314,15 @@ const CreateInvoice = () => {
                 </Select.Option>
               ))}
             </Select>
+            <Button 
+              type="default" 
+              style={{ marginTop: '16px' }}
+              icon={<PlusOutlined />}
+              onClick={() => setCreateCustomerModalVisible(true)}
+              disabled={!selectedCompanyId}
+            >
+              Add New Customer
+            </Button>
           </Form.Item>
 
           <Form.Item 
@@ -362,8 +409,56 @@ const CreateInvoice = () => {
             </Space>
           </Form.Item>
         </Form>
-      
-    </div>
+      <Modal
+        title="Create Customer"
+        open={createCustomerModalVisible}
+        onOk={handleCreateCustomerSubmit}
+        onCancel={() => {
+          setCreateCustomerModalVisible(false);
+          createCustomerForm.resetFields();
+        }}
+        confirmLoading={loading}
+        width="95%"
+        style={{ maxWidth: '500px' }}
+      >
+        <Form
+          form={createCustomerForm}
+          layout="vertical"
+        >
+          <Form.Item
+            label="Name"
+            name="name"
+            rules={[{ required: true, message: 'Please input customer name!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              { required: true, message: 'Please input customer email!' },
+              { type: 'email', message: 'Please enter a valid email!' }
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Phone"
+            name="phone"
+            rules={[{ required: true, message: 'Please input customer phone!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Address"
+            name="address"
+            rules={[{ required: false }]}
+          >
+            <Input.TextArea rows={4} />
+          </Form.Item>
+        </Form>
+      </Modal>
+      </div>
   );
 };
 

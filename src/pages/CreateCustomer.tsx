@@ -111,7 +111,7 @@ const CreateCustomer = () => {
         <Form.Item
           label="Address"
           name="address"
-          rules={[{ required: true, message: 'Please input customer address!' }]}
+          rules={[{ required: false, message: 'Please input customer address!' }]}
         >
           <Input.TextArea rows={4} />
         </Form.Item>

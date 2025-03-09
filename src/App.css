@@ -58,6 +58,12 @@
   }
 }
 
+@media (max-width: 768px) {
+  .hippoText {
+    display: none !important;
+  }
+}
+
 .card {
   padding: 2em;
 }

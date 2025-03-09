@@ -146,7 +146,7 @@ const Settings = () => {
                   icon={<PlusOutlined />}
                   onClick={() => setCreateModalVisible(true)}
                 >
-                  Add New Company
+                  New Company
                 </Button>
               </Col>
             </Row>
