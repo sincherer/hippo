@@ -35,10 +35,18 @@ const SignUp = () => {
       });
   
       if (authError) throw authError;
-      if (authData.user) {
-        message.success('Account created! Please check your email to verify your account.');
-        navigate('/dashboard');
+      
+      if (!authData.user) {
+        throw new Error('Failed to create user account');
       }
+
+      if (authData.user.identities?.length === 0) {
+        message.error('This email is already registered. Please try logging in or use a different email.');
+        return;
+      }
+
+      message.success('Account created! Please check your email to verify your account. If you don\'t see the email, please check your spam folder.');
+      navigate('/login');
     } catch (error: unknown) {
       const authError = error as AuthError;
       console.error('Error signing up:', authError);
