@@ -81,7 +81,7 @@ function MainLayout() {
             }))}
             value={location.pathname}
             onChange={(value: string) => navigate(value)}
-            style={{ backgroundColor: '#f0f2f5' }}
+            style={{ backgroundColor: '#ffffff' }}
           />
         </div>
         
@@ -110,22 +110,20 @@ function MainLayout() {
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route
-            path="/*"
-            element={
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </AuthProvider>
-    </Router>
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </AuthProvider>
   );
 }
 
