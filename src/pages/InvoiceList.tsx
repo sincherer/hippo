@@ -34,6 +34,8 @@ const InvoiceList = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState<{ [key: string]: boolean }>({});
   const [filter, setFilter] = useState<string>('all');
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const navigate = useNavigate();
 
   const filteredInvoices = invoices.filter(invoice => {
@@ -211,6 +213,31 @@ const InvoiceList = () => {
     }
   };
 
+  const handleDelete = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setDeleteModalVisible(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedInvoice) return;
+
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', selectedInvoice.id);
+
+      if (error) throw error;
+
+      message.success('Invoice deleted successfully');
+      setDeleteModalVisible(false);
+      fetchInvoices();
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      message.error('Failed to delete invoice');
+    }
+  };
+
   return (
     <div>
       <Space direction="vertical" style={{ width: '100%', marginTop: '24px' }} size="large"/>
@@ -247,6 +274,14 @@ const InvoiceList = () => {
                   key="download"
                 >
                   Download
+                </Button>,
+                <Button 
+                  type="link" 
+                  danger 
+                  onClick={() => handleDelete(invoice)}
+                  key="delete"
+                >
+                  Delete
                 </Button>
               ]}
             >
@@ -282,6 +317,17 @@ const InvoiceList = () => {
           </Col>
         ))}
       </Row>
+
+      <Modal
+        title="Delete Invoice"
+        open={deleteModalVisible}
+        onOk={handleDeleteConfirm}
+        onCancel={() => setDeleteModalVisible(false)}
+        okText="Delete"
+        okButtonProps={{ danger: true }}
+      >
+        <p>Are you sure you want to delete this invoice? This action cannot be undone.</p>
+      </Modal>
     </div>
   );
 };
