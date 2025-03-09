@@ -1,7 +1,5 @@
-//import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as  Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Layout } from 'antd';
-//import { useMediaQuery } from 'react-responsive';
 import {
   HomeOutlined,
   FileOutlined,
