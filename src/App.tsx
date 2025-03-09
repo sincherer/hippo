@@ -79,7 +79,7 @@ function MainLayout() {
             }))}
             value={location.pathname}
             onChange={(value: string) => navigate(value)}
-            style={{ backgroundColor: '#ffffff' }}
+            style={{ backgroundColor: '#f0f2f5' }}
           />
         </div>
         
