@@ -1,5 +1,6 @@
 {
-  "name": "invoice-maker",
+  "homepage": "https://sincherer.github.io/hippo/",
+  "name": "Hippo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
