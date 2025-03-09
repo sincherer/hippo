@@ -59,8 +59,15 @@ const SignUp = () => {
   };
 
   return (
-    <div style={{ width: '100vw', margin: '40px auto', padding: '0 20px' }}>
-      <Card>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      background: '#fffff',
+      width: '100vw',
+     }}>
+      <Card style={{ width: 400 }}>
         <h2 style={{ textAlign: 'center', marginBottom: '24px' }}>Create Account</h2>
         <Form
           layout="vertical"

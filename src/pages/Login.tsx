@@ -39,7 +39,7 @@ const Login = () => {
       background: '#fffff',
       width: '100vw',
     }}>
-      <Card style={{ width: 400 }}>
+      <Card style={{ width: 400, justifyContent: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <img
             src={hippoLogo}
@@ -47,6 +47,8 @@ const Login = () => {
             style={{
               width: 40,
               height: 40,
+              marginRight: 16,
+              alignContent: 'center',
               objectFit: 'contain',
               borderRadius: 50,
               cursor: 'pointer'
