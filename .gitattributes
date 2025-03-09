@@ -1,2 +1,2 @@
-*.js  text/javascript
-*.mjs text/javascript
+*.js  text eol=lf
+*.mjs text eol=lf
