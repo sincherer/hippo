@@ -199,7 +199,7 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, ite
             )}
             <Title level={5} style={{ margin: 0, color: '#d7cabe', fontSize: '14px' }}>{company.name}</Title>
           </div>
-          <div style={{ marginTop: '8px', fontSize: '12px', lineHeight: '1.2' }}>
+          <div style={{ marginTop: '8px', fontSize: '9px', lineHeight: '1.2' }}>
             <Text>{customer.name}</Text><br />
             <Text>{customer.address}</Text><br />
             <Text>{customer.email}</Text><br />
@@ -207,8 +207,8 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, ite
           </div>
         </Col>
         <Col>
-          <Title level={5} style={{ margin: 0, color: '#000000', textAlign: 'right', fontSize: '14px' }}>INVOICE</Title>
-          <div style={{ marginTop: '4px', textAlign: 'right', lineHeight: '1.2', fontSize: '12px' }}>
+          <Title level={5} style={{ margin: 0, color: '#000000', textAlign: 'right', fontSize: '16px' }}>INVOICE</Title>
+          <div style={{ marginTop: '4px', textAlign: 'right', lineHeight: '1.2', fontSize: '9px' }}>
             <Text>Invoice number: </Text><Text>{invoice.invoice_number}</Text><br />
             <Text>Invoice date: </Text><Text>{invoice.date}</Text><br />
             <Text>Due date: </Text><Text>{invoice.due_date}</Text><br />
