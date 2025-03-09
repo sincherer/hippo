@@ -106,7 +106,7 @@ const InvoiceList = () => {
 
       // Preload company logo if exists
       if (companyData.logo_url) {
-        await new Promise((resolve, reject) => {
+        await new Promise((resolve) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
           img.onload = () => {
