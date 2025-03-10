@@ -50,16 +50,14 @@
 }
 
 @media (max-width: 768px) {
-  .hippoText {
-    display: none !important;
-  }
+
   
   .segmentedText {
     display: none !important;
   }
   
   .segmentedItem {
-    padding: 0 8px;
+    padding: 8px 8px;
   }
 
   .content {

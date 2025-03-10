@@ -61,14 +61,15 @@ const PublicInvoicePreview = () => {
     const fetchInvoiceData = async () => {
       try {
         // Set the share token in the database session
-        await supabase.rpc('set_share_token', { token: shareToken });
+        await supabase.rpc('set_share_token', { input_token: shareToken });
+
 
         // Fetch invoice data using share token
         const { data: shareData, error: shareError } = await supabase
           .from('invoice_shares')
           .select('invoice_id, expires_at')
           .eq('token', shareToken)
-          .maybeSingle();
+          .single();
 
         if (!shareData || shareError) {
           throw new Error('Invalid share link');
@@ -92,7 +93,7 @@ const PublicInvoicePreview = () => {
             total,
             customer_id,
             company_id,
-            customers !inner(name)
+            customers!inner (name)
           `)
           .eq('id', shareData.invoice_id)
           .single()
@@ -173,6 +174,7 @@ const PublicInvoicePreview = () => {
           customer_id: invoiceData.customer_id,
           company_id: invoiceData.company_id,
           customer_name: invoiceData.customers?.[0]?.name
+
 
         });
         setItems(itemsData || []);
