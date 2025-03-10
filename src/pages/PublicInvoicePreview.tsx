@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../config/supabase';
 import InvoicePDF from '../components/InvoicePDF';
