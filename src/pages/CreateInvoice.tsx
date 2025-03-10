@@ -33,11 +33,11 @@ const CreateInvoice = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [companies, setCompanies] = useState<{ id: string; name: string; }[]>([]);
-  const [createModalVisible, setCreateModalVisible] = useState(false);
   const [createCustomerModalVisible, setCreateCustomerModalVisible] = useState(false);
-  const [createForm] = Form.useForm();
   const [createCustomerForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [createCompanyModalVisible, setCreateCompanyModalVisible] = useState(false);
+  const [createCompanyForm] = Form.useForm();
 
   const handleCreateCustomerSubmit = async () => {
     try {
@@ -65,31 +65,7 @@ const CreateInvoice = () => {
       setLoading(false);
     }
   };
-  const handleCreateSubmit = async () => {
-    try {
-      setLoading(true);
-      const values = await createForm.validateFields();
 
-      const { error } = await supabase
-        .from('companies')
-        .insert([{
-          ...values,
-          user_id: user?.id
-        }]);
-
-      if (error) throw error;
-
-      message.success('Company created successfully');
-      setCreateModalVisible(false);
-      createForm.resetFields();
-      fetchCompanies();
-    } catch (error) {
-      console.error('Error creating company:', error);
-      message.error('Failed to create company');
-    } finally {
-      setLoading(false);
-    }
-  };
   const fetchCompanies = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -244,87 +220,24 @@ const CreateInvoice = () => {
                 </Select.Option>
               ))}
             </Select>
+          </Form.Item>
 
+          <Form.Item>
             <Button 
-                  type="default" 
-                  style={{ marginTop: '16px' }}
-                  icon={<PlusOutlined />}
-                  onClick={() => setCreateModalVisible(true)}
-                >
-                  Add New Company
-                </Button>
-
-                <Modal
-        title="Create Company"
-        open={createModalVisible}
-        onOk={handleCreateSubmit}
-        onCancel={() => {
-          setCreateModalVisible(false);
-          createForm.resetFields();
-        }}
-        confirmLoading={loading}
-        width="95%"
-        style={{ maxWidth: '500px' }}
-      >
-        <Form
-          form={createForm}
-          layout="vertical"
-        >
-          <Form.Item
-            label="Company Name"
-            name="name"
-            rules={[{ required: true, message: 'Please input company name!' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Address"
-            name="address"
-            rules={[{ required: true, message: 'Please input company address!' }]}
-          >
-            <Input.TextArea />
-          </Form.Item>
-          <Form.Item
-            label="Phone"
-            name="phone"
-            rules={[{ required: true, message: 'Please input company phone!' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[{ required: true, type: 'email', message: 'Please input valid company email!' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Logo URL"
-            name="logo_url"
-            rules={[{ type: 'url', message: 'Please input a valid URL!' }]}
-          >
-            <Input placeholder="Enter the URL of your company logo" />
-          </Form.Item>
-          <Form.Item
-            label="Bank Name"
-            name="bank_name"
-          >
-            <Input placeholder="Enter your company's bank name"/>
-          </Form.Item>
-          <Form.Item
-            label="Bank Account"
-            name="bank_account"
-          >
-            <Input placeholder="Enter your company's bank account details"/>
-          </Form.Item>
-        </Form>
-      </Modal>
+              type="default" 
+              style={{ marginTop: '16px' }}
+              icon={<PlusOutlined />}
+              onClick={() => setCreateCompanyModalVisible(true)}
+            >
+              Add New Company
+            </Button>
           </Form.Item>
 
           <Form.Item 
             label="Customer" 
             name="customer_id" 
-            rules={[{ required: true, message: 'Please select a customer!' }]}>
+            rules={[{ required: true, message: 'Please select a customer!' }]}
+          >
             <Select 
               placeholder="Select customer" 
               size="large" 
@@ -338,12 +251,14 @@ const CreateInvoice = () => {
                 </Select.Option>
               ))}
             </Select>
+          </Form.Item>
+
+          <Form.Item>
             <Button 
               type="default" 
               style={{ marginTop: '16px' }}
               icon={<PlusOutlined />}
               onClick={() => setCreateCustomerModalVisible(true)}
-              disabled={!selectedCompanyId}
             >
               Add New Customer
             </Button>
@@ -482,7 +397,95 @@ const CreateInvoice = () => {
           </Form.Item>
         </Form>
       </Modal>
-      </div>
+      <Modal
+        title="Create Company"
+        open={createCompanyModalVisible}
+        onOk={async () => {
+          try {
+            setLoading(true);
+            const values = await createCompanyForm.validateFields();
+            const { error } = await supabase
+              .from('companies')
+              .insert([{
+                ...values,
+                user_id: user?.id
+              }]);
+
+            if (error) throw error;
+
+            message.success('Company created successfully');
+            setCreateCompanyModalVisible(false);
+            createCompanyForm.resetFields();
+            fetchCompanies();
+          } catch (error) {
+            console.error('Error creating company:', error);
+            message.error('Failed to create company');
+          } finally {
+            setLoading(false);
+          }
+        }}
+        onCancel={() => {
+          setCreateCompanyModalVisible(false);
+          createCompanyForm.resetFields();
+        }}
+        confirmLoading={loading}
+        width="95%"
+        style={{ maxWidth: '500px' }}
+      >
+        <Form
+          form={createCompanyForm}
+          layout="vertical"
+        >
+          <Form.Item
+            label="Company Name"
+            name="name"
+            rules={[{ required: true, message: 'Please input company name!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Address"
+            name="address"
+            rules={[{ required: true, message: 'Please input company address!' }]}
+          >
+            <Input.TextArea />
+          </Form.Item>
+          <Form.Item
+            label="Phone"
+            name="phone"
+            rules={[{ required: true, message: 'Please input company phone!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[{ required: true, type: 'email', message: 'Please input valid company email!' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="Logo URL"
+            name="logo_url"
+            rules={[{ type: 'url', message: 'Please input a valid URL!' }]}
+          >
+            <Input placeholder="Enter the URL of your company logo" />
+          </Form.Item>
+          <Form.Item
+            label="Bank Name"
+            name="bank_name"
+          >
+            <Input placeholder="Enter your company's bank name"/>
+          </Form.Item>
+          <Form.Item
+            label="Bank Account"
+            name="bank_account"
+          >
+            <Input placeholder="Enter your company's bank account details"/>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </div>
   );
 };
 

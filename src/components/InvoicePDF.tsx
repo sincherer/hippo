@@ -1,5 +1,4 @@
-import { Row, Col, Typography, Table } from 'antd';
-import { useState, useEffect, useRef } from 'react';
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 
 interface Company {
   name: string;
@@ -38,259 +37,171 @@ interface InvoicePDFProps {
   items: InvoiceItem[];
 }
 
-const { Title, Text } = Typography;
+const styles = StyleSheet.create({
+  page: {
+    padding: 30,
+    backgroundColor: '#ffffff',
+    fontSize: 10
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20
+  },
+  logo: {
+    width: 120,
+    height: 60,
+    objectFit: 'contain',
+    marginBottom: 10
+  },
+  companyName: {
+    fontSize: 20,
+    marginBottom: 10,
+    color: '#333333'
+  },
+  title: {
+    fontSize: 24,
+    textAlign: 'right',
+    marginBottom: 10
+  },
+  text: {
+    fontSize: 10,
+    lineHeight: 1.4,
+    marginBottom: 3
+  },
+  table: {
+    width: '100%',
+    marginTop: 20,
+    marginBottom: 20,
+    display: 'flex',
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderColor: '#f0f0f0'
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    borderBottomStyle: 'solid',
+    minHeight: 30,
+    alignItems: 'center'
+  },
+  tableHeader: {
+    backgroundColor: '#fafafa',
+    fontWeight: 'bold'
+  },
+  tableCell: {
+    padding: 8,
+    fontSize: 9
+  },
+  descriptionCell: {
+    width: '35%',
+    borderRightWidth: 1,
+    borderRightColor: '#f0f0f0'
+  },
+  dateCell: {
+    width: '15%',
+    borderRightWidth: 1,
+    borderRightColor: '#f0f0f0',
+    textAlign: 'center'
+  },
+  qtyCell: {
+    width: '10%',
+    borderRightWidth: 1,
+    borderRightColor: '#f0f0f0',
+    textAlign: 'center'
+  },
+  priceCell: {
+    width: '15%',
+    borderRightWidth: 1,
+    borderRightColor: '#f0f0f0',
+    textAlign: 'right'
+  },
+  vatCell: {
+    width: '10%',
+    borderRightWidth: 1,
+    borderRightColor: '#f0f0f0',
+    textAlign: 'center'
+  },
+  totalCell: {
+    width: '15%',
+    textAlign: 'right'
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 30,
+    left: 30,
+    right: 30,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    borderTopStyle: 'solid',
+    paddingTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  }
+});
 
 const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, items }) => {
-  const [logoLoaded, setLogoLoaded] = useState<boolean>(false);
-  const [logoError, setLogoError] = useState<boolean>(false);
-  const logoRef = useRef<HTMLImageElement | null>(null);
-
-  useEffect(() => {
-    if (company.logo_url && !logoLoaded) {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        // Create a canvas to properly encode the image
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0);
-          // Update the logo with properly encoded data
-          if (logoRef.current) {
-            logoRef.current.src = canvas.toDataURL('image/png');
-          }
-          setLogoLoaded(true);
-          setLogoError(false);
-        }
-      };
-      img.onerror = () => {
-        console.warn('Failed to load company logo');
-        setLogoError(true);
-        setLogoLoaded(false);
-      };
-      img.src = company.logo_url;
-    }
-  }, [company.logo_url, logoLoaded]);
-
-  const columns = [
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      width: '40%',
-      render: (description: string) => (
-        <div dangerouslySetInnerHTML={{ __html: description.replace(/\n/g, '<br />') }} />
-      ),
-    },
-    {
-      title: 'Date',
-      dataIndex: 'date',
-      key: 'date',
-      width: '15%',
-      render: () => invoice.date,
-    },
-    {
-      title: 'Qty',
-      dataIndex: 'quantity',
-      key: 'quantity',
-      align: 'right' as const,
-      width: '10%',
-    },
-    {
-      title: 'Unit price',
-      dataIndex: 'unit_price',
-      key: 'unit_price',
-      align: 'right' as const,
-      width: '15%',
-      render: (price: number) => `${price.toFixed(2)}`,
-    },
-    {
-      title: 'VAT %',
-      dataIndex: 'vat',
-      key: 'vat',
-      align: 'right' as const,
-      width: '10%',
-      render: () => `${invoice.tax_rate}%`,
-    },
-    {
-      title: 'Total',
-      dataIndex: 'amount',
-      key: 'amount',
-      align: 'right' as const,
-      width: '10%',
-      render: (amount: number) => `${amount.toFixed(2)}`,
-    },
-  ];
-
-
   return (
-    <div style={{
-      width: '210mm',
-      minHeight: '297mm',
-      padding: '10mm',
-      margin: '0 auto',
-      backgroundColor: '#ffffff',
-      boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
-      position: 'relative',
-      fontSize: '12px',
-      color: '#000000',
-      boxSizing: 'border-box'
-    }}>
-      <Row justify="space-between" align="top" style={{ marginBottom: '15px', backgroundColor:'#ffffff' }}>
-        <Col>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-            {company.logo_url && !logoError ? (
-              <div>
-                <img 
-                  ref={logoRef}
-                  src={company.logo_url} 
-                  alt={company.name} 
-                  style={{
-                    width: '64px',
-                    height: '64px',
-                    marginRight: '8px',
-                    objectFit: 'contain',
-                    display: logoLoaded ? 'block' : 'none',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #f0f0f0',
-                    padding: '4px'
-                  }}
-                />
-                {!logoLoaded && (
-                  <div 
-                    className="fallback-logo"
-                    style={{
-                      width: '64px',
-                      height: '64px',
-                      backgroundColor: '#d7cabe',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: '8px',
-                      border: '1px solid #f0f0f0',
-                      borderRadius : 50
-                    }}
-                  >
-                    <div style={{ color: '#000000', fontWeight: 'bold', fontSize: '24px' }}>
-                      {company.name.charAt(0).toUpperCase()}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div 
-                className="fallback-logo"
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  backgroundColor: '#f0f0f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: '8px',
-                  border: '1px solid #f0f0f0'
-                }}
-              >
-                <div style={{ color: '#666666', fontWeight: 'bold', fontSize: '24px' }}>
-                  {company.name.charAt(0).toUpperCase()}
-                </div>
-              </div>
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <View>
+            {company.logo_url && (
+              <Image src={company.logo_url} style={styles.logo} />
             )}
-            <Title level={5} style={{ margin: 0, color: '#d7cabe', fontSize: '14px' }}>{company.name}</Title>
-          </div>
-          <div style={{ marginTop: '8px', fontSize: '9px', lineHeight: '1.2' }}>
-            <Text>{customer.name}</Text><br />
-            <div dangerouslySetInnerHTML={{ __html: customer.address.replace(/\n/g, '<br />') }} />
-            <Text>{customer.email}</Text><br />
-            <Text>{customer.phone}</Text><br />
-          </div>
-        </Col>
-        <Col>
-          <Title level={5} style={{ margin: 0, color: '#000000', textAlign: 'right', fontSize: '16px' }}>INVOICE</Title>
-          <div style={{ marginTop: '4px', textAlign: 'right', lineHeight: '1.2', fontSize: '9px' }}>
-            <Text>Invoice number: </Text><Text>{invoice.invoice_number}</Text><br />
-            <Text>Invoice date: </Text><Text>{invoice.date}</Text><br />
-            <Text>Due date: </Text><Text>{invoice.due_date}</Text><br />
-          </div>
-        </Col>
-      </Row>
+            <Text style={styles.companyName}>{company.name}</Text>
+            <Text style={styles.text}>{customer.name}</Text>
+            <Text style={styles.text}>{customer.address}</Text>
+            <Text style={styles.text}>{customer.email}</Text>
+            <Text style={styles.text}>{customer.phone}</Text>
+          </View>
+          <View>
+            <Text style={styles.title}>INVOICE</Text>
+            <Text style={styles.text}>Invoice number: {invoice.invoice_number}</Text>
+            <Text style={styles.text}>Invoice date: {invoice.date}</Text>
+            <Text style={styles.text}>Due date: {invoice.due_date}</Text>
+          </View>
+        </View>
 
-      <Text style={{ fontSize: '12px' }}>Thank you for your business!</Text>
+        <Text style={styles.text}>Thank you for your business!</Text>
 
-      <Table
-        columns={columns}
-        dataSource={items.map((item, index) => ({ ...item, key: `item-${index}` }))}
-        pagination={false}
-        bordered
-        size="small"
-        style={{
-          marginTop: '8px',
-          marginBottom: '16px',
-          width: '100%',
-          tableLayout: 'fixed',
-          fontSize: '12px',
-          backgroundColor: '#ffffff'
-        }}
-        className="invoice-table"
-        summary={() => (
-          <Table.Summary>
-            <Table.Summary.Row key="subtotal">
-              <Table.Summary.Cell index={0} colSpan={5} align="right">
-                <Text strong style={{ fontSize: '12px' }}>Total excl. VAT</Text>
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={1} colSpan={2} align="right">
-                <Text style={{ fontSize: '12px', paddingRight: '8px' }}>{invoice.subtotal.toFixed(2)} </Text>
-              </Table.Summary.Cell>
-            </Table.Summary.Row>
-            <Table.Summary.Row key="vat">
-              <Table.Summary.Cell index={0} colSpan={5} align="right">
-                <Text strong style={{ fontSize: '12px' }}>VAT {invoice.tax_rate}%</Text>
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={1} colSpan={2} align="right">
-                <Text style={{ fontSize: '12px', paddingRight: '8px' }}>{invoice.tax_amount.toFixed(2)} </Text>
-              </Table.Summary.Cell>
-            </Table.Summary.Row>
-            <Table.Summary.Row key="total">
-              <Table.Summary.Cell index={0} colSpan={5} align="right">
-                <Text strong style={{ fontSize: '12px' }}>Total amount due</Text>
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={1} colSpan={2} align="right">
-                <Text strong style={{ fontSize: '12px', paddingRight: '8px' }}>{invoice.total.toFixed(2)} </Text>
-              </Table.Summary.Cell>
-            </Table.Summary.Row>
-          </Table.Summary>
-        )}
-      />
+        <View style={styles.table}>
+          <View style={[styles.tableRow, styles.tableHeader]}>
+            <Text style={[styles.tableCell, styles.descriptionCell]}>Description</Text>
+            <Text style={[styles.tableCell, styles.dateCell]}>Date</Text>
+            <Text style={[styles.tableCell, styles.qtyCell]}>Qty</Text>
+            <Text style={[styles.tableCell, styles.priceCell]}>Unit price</Text>
+            <Text style={[styles.tableCell, styles.vatCell]}>VAT %</Text>
+            <Text style={[styles.tableCell, styles.totalCell]}>Total</Text>
+          </View>
 
-      <div style={{ 
-        position: 'absolute',
-        bottom: '8mm',
-        left: '8mm',
-        right: '8mm',
-        borderTop: '1px solid #f0f0f0',
-        paddingTop: '8px',
-        fontSize: '12px',
-        lineHeight: '1.2'
-      }}>
-        <Row justify="space-between">
-          <Col span={12}>
-            <Text strong>{company.name}</Text><br />
-            <div dangerouslySetInnerHTML={{ __html: company.address.replace(/\n/g, '<br />') }} />
-            <Text>{company.email}</Text><br />
-            <Text>{company.phone}</Text><br />
-          </Col>
-          <Col span={12} style={{ textAlign: 'right' }}>
-            <Text strong>Payment details</Text><br />
-            <Text>Bank: {company.bank_name || 'default bank name'}</Text><br />
-            <Text>IBAN: {company.bank_account || 'bank account details'}</Text>
-          </Col>
-        </Row>
-      </div>
-    </div>
+          {items.map((item, index) => (
+            <View key={index} style={styles.tableRow}>
+              <Text style={[styles.tableCell, styles.descriptionCell]}>{item.description}</Text>
+              <Text style={[styles.tableCell, styles.dateCell]}>{invoice.date}</Text>
+              <Text style={[styles.tableCell, styles.qtyCell]}>{item.quantity}</Text>
+              <Text style={[styles.tableCell, styles.priceCell]}>{item.unit_price.toFixed(2)}</Text>
+              <Text style={[styles.tableCell, styles.vatCell]}>{invoice.tax_rate}%</Text>
+              <Text style={[styles.tableCell, styles.totalCell]}>{item.amount.toFixed(2)}</Text>
+            </View>
+          ))}
+
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, { textAlign: 'right', width: '90%' }]}>Total excl. VAT</Text>
+            <Text style={[styles.tableCell, styles.totalCell]}>{invoice.subtotal.toFixed(2)}</Text>
+          </View>
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, { textAlign: 'right', width: '90%' }]}>VAT {invoice.tax_rate}%</Text>
+            <Text style={[styles.tableCell, styles.totalCell]}>{invoice.tax_amount.toFixed(2)}</Text>
+          </View>
+          <View style={styles.tableRow}>
+            <Text style={[styles.tableCell, { textAlign: 'right', width: '90%' }]}>Total amount due</Text>
+            <Text style={[styles.tableCell, styles.totalCell]}>{invoice.total.toFixed(2)}</Text>
+          </View>
+        </View>
+      </Page>
+    </Document>
   );
 };
 

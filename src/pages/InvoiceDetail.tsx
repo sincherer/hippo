@@ -4,10 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../config/supabase';
 import InvoicePDF from '../components/InvoicePDF';
-import ReactDOMServer from 'react-dom/server';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+import * as ReactPDF from '@react-pdf/renderer';
 import { CheckOutlined, ArrowLeftOutlined, ShareAltOutlined } from '@ant-design/icons';
+import { PDFViewer } from '@react-pdf/renderer';
 
 
 interface Invoice {
@@ -138,37 +137,8 @@ const InvoiceDetailContent = () => {
 
       if (companyError) throw companyError;
 
-      // Preload company logo if exists
-      if (companyData.logo_url) {
-        await new Promise((resolve) => {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => {
-            // Create a canvas to properly encode the image
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.fillStyle = '#FFFFFF';
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(img, 0, 0);
-              // Update the logo URL with properly encoded data
-              companyData.logo_url = canvas.toDataURL('image/png');
-            }
-            resolve(null);
-          };
-          img.onerror = () => {
-            console.warn('Failed to load company logo');
-            companyData.logo_url = undefined; // Remove the logo URL if it fails to load
-            resolve(null); // Resolve anyway to continue with PDF generation
-          };
-          img.src = companyData.logo_url;
-        });
-      }
-
-      // Render InvoicePDF component to string
-      const invoicePDFComponent = (
+      // Create PDF document
+      const pdfContent = (
         <InvoicePDF
           invoice={{
             invoice_number: invoice.invoice_number,
@@ -195,45 +165,26 @@ const InvoiceDetailContent = () => {
         />
       );
 
-      // Convert component to HTML string
-      const htmlString = ReactDOMServer.renderToString(invoicePDFComponent);
-
-      // Create a temporary container
-      const container = document.createElement('div');
-      container.innerHTML = htmlString;
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      container.style.top = '-9999px';
-      document.body.appendChild(container);
-
-      // Wait for a short moment to ensure styles are applied
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Use html2canvas with better options
-      const canvas = await html2canvas(container.firstChild as HTMLElement, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false
-      });
-      document.body.removeChild(container);
-
-      // Create PDF from canvas with proper image format handling
-      const imgData = canvas.toDataURL('image/png', 1.0);
-      const pdf = new jsPDF();
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`invoice-${invoice.invoice_number}.pdf`);
+      // Use react-pdf's pdf method to generate PDF
+      const blob = await ReactPDF.pdf(pdfContent).toBlob();
+      const url = URL.createObjectURL(blob);
+      
+      // Create a link element and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${invoice.invoice_number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL object
+      URL.revokeObjectURL(url);
 
       message.success('Invoice downloaded successfully');
-      setLoading(false);
-
     } catch (error) {
       console.error('Error generating PDF:', error);
       message.error('Failed to generate PDF');
+    } finally {
       setLoading(false);
     }
   };
@@ -250,56 +201,29 @@ const InvoiceDetailContent = () => {
         .select('email, phone, address')
         .eq('id', invoice?.customer_id)
         .single();
-  
+
       if (customerError) throw customerError;
-  
+
       // Fetch company details
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
         .select('name, address, bank_name, bank_account, email, phone, logo_url')
         .eq('id', invoice.company_id)
         .single();
-  
+
       if (companyError) throw companyError;
-  
-      // Preload company logo if exists
-      if (companyData.logo_url) {
-        await new Promise((resolve) => {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.fillStyle = '#FFFFFF';
-              ctx.fillRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(img, 0, 0);
-              companyData.logo_url = canvas.toDataURL('image/png');
-            }
-            resolve(null);
-          };
-          img.onerror = () => {
-            console.warn('Failed to load company logo');
-            companyData.logo_url = undefined;
-            resolve(null);
-          };
-          img.src = companyData.logo_url;
-        });
-      }
-  
+
       setCompanyData(companyData);
       setCustomerData(customerData);
       setIsPreviewModalVisible(true);
-      
     } catch (error) {
-      console.error('Error generating preview:', error);
-      message.error('Failed to generate preview');
+      console.error('Error preparing PDF preview:', error);
+      message.error('Failed to prepare PDF preview');
     } finally {
       setLoading(false);
     }
   };
+
 
   if (!invoice) return null;
 
@@ -416,7 +340,7 @@ const InvoiceDetailContent = () => {
           </Descriptions>
         </Card>
 
-        <Card title="Items" bodyStyle={{ padding: '0' }}>
+        <Card title="Items" styles={{ body: { padding: '0' } }}>
           <div style={{ overflowX: 'auto' }}>
             <Table
             dataSource={items}
@@ -555,35 +479,38 @@ const InvoiceDetailContent = () => {
         open={isPreviewModalVisible}
         onCancel={() => setIsPreviewModalVisible(false)}
         footer={null}
-        width={1000}
-        bodyStyle={{ padding: '20px', maxHeight: '80vh', overflow: 'auto' }}
+        width="80%"
+        style={{ top: 20 }}
+        styles={{ body: { padding: 0, height: 'calc(100vh - 100px)' } }}
       >
-        <div style={{ padding: '20px', backgroundColor: 'white' }}>
-          {companyData && customerData && <InvoicePDF
-            invoice={{
-              invoice_number: invoice.invoice_number,
-              date: invoice.date,
-              due_date: invoice.due_date,
-              subtotal: invoice.subtotal,
-              tax_rate: invoice.tax_rate,
-              tax_amount: invoice.tax_amount,
-              total: invoice.total
-            }}
-            company={companyData}
-            customer={{
-              name: invoice.customer_name || '',
-              address: customerData.address || '',
-              email: customerData.email || '',
-              phone: customerData.phone || ''
-            }}
-            items={items.map(item => ({
-              description: item.description,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              amount: item.amount
-            }))}
-          />}
-        </div>
+        {companyData && customerData && (
+          <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
+            <InvoicePDF
+              invoice={{
+                invoice_number: invoice!.invoice_number,
+                date: invoice!.date,
+                due_date: invoice!.due_date,
+                subtotal: invoice!.subtotal,
+                tax_rate: invoice!.tax_rate,
+                tax_amount: invoice!.tax_amount,
+                total: invoice!.total
+              }}
+              company={companyData}
+              customer={{
+                name: invoice!.customer_name || '',
+                address: customerData.address || '',
+                email: customerData.email || '',
+                phone: customerData.phone || ''
+              }}
+              items={items.map(item => ({
+                description: item.description,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                amount: item.amount
+              }))}
+            />
+          </PDFViewer>
+        )}
       </Modal>
     </div>
   );

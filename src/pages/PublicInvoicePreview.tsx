@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../config/supabase';
 import InvoicePDF from '../components/InvoicePDF';
 import { Spin, Result } from 'antd';
+import { PDFViewer } from '@react-pdf/renderer';
+import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 
 interface Invoice {
   id: string;
@@ -32,7 +34,7 @@ interface Company {
     bank_account: string;
     email: string;
     phone: string;
-    logo_url?: string; // 可选
+    logo_url?: string;
   }
   
   interface Customer {
@@ -49,7 +51,8 @@ const PublicInvoicePreview = () => {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [companyData, setCompanyData] = useState<Company | null>(null);
-  const [customerData, setCustomerData] = useState<Customer | null >(null);
+  const [customerData, setCustomerData] = useState<Customer | null>(null);
+
 
   useEffect(() => {
     const fetchInvoiceData = async () => {
@@ -59,7 +62,8 @@ const PublicInvoicePreview = () => {
           .from('invoice_shares')
           .select('invoice_id')
           .eq('token', shareToken)
-          .single();
+          .single()
+          .throwOnError();
 
         if (shareError) throw new Error('Invalid or expired share link');
 
@@ -71,7 +75,8 @@ const PublicInvoicePreview = () => {
             customers (name)
           `)
           .eq('id', shareData.invoice_id)
-          .single();
+          .single()
+          .throwOnError();
 
         if (invoiceError) throw invoiceError;
 
@@ -79,7 +84,8 @@ const PublicInvoicePreview = () => {
         const { data: itemsData, error: itemsError } = await supabase
           .from('invoice_items')
           .select('*')
-          .eq('invoice_id', shareData.invoice_id);
+          .eq('invoice_id', shareData.invoice_id)
+          .throwOnError();
 
         if (itemsError) throw itemsError;
 
@@ -88,16 +94,50 @@ const PublicInvoicePreview = () => {
           .from('companies')
           .select('name, address, bank_name, bank_account, email, phone, logo_url')
           .eq('id', invoiceData.company_id)
-          .single();
+          .single()
+          .throwOnError();
 
         if (companyError) throw companyError;
+
+        // Preload and encode company logo if it exists
+        if (company.logo_url) {
+          try {
+            await new Promise((resolve) => {
+              const img = new Image();
+              img.crossOrigin = 'anonymous';
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.fillStyle = '#FFFFFF';
+                  ctx.fillRect(0, 0, canvas.width, canvas.height);
+                  ctx.drawImage(img, 0, 0);
+                  company.logo_url = canvas.toDataURL('image/png');
+                }
+                resolve(null);
+              };
+              img.onerror = () => {
+                console.warn('Failed to load company logo');
+                company.logo_url = undefined;
+                resolve(null);
+              };
+              img.src = company.logo_url;
+            });
+          } catch (error) {
+            console.warn('Error processing company logo:', error);
+            company.logo_url = undefined;
+          }
+        }
 
         // Fetch customer details
         const { data: customer, error: customerError } = await supabase
           .from('customers')
           .select('email, phone, address')
           .eq('id', invoiceData.customer_id)
-          .single();
+          .single()
+          .throwOnError();
 
         if (customerError) throw customerError;
 
@@ -139,32 +179,48 @@ const PublicInvoicePreview = () => {
     );
   }
 
+  const invoiceData = {
+    invoice: {
+      invoice_number: invoice.invoice_number,
+      date: invoice.date,
+      due_date: invoice.due_date,
+      subtotal: invoice.subtotal,
+      tax_rate: invoice.tax_rate,
+      tax_amount: invoice.tax_amount,
+      total: invoice.total
+    },
+    company: companyData,
+    customer: {
+      name: invoice.customer_name || '',
+      address: customerData?.address || '',
+      email: customerData?.email || '',
+      phone: customerData?.phone || ''
+    },
+    items: items.map(item => ({
+      description: item.description,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      amount: item.amount
+    }))
+  };
+
+  const fallbackRender = ({ error }: { error: Error }) => (
+    <Result
+      status="error"
+      title="Failed to render PDF"
+      subTitle={error?.message || 'An unexpected error occurred while rendering the PDF'}
+    />
+  );
+
   return (
-    <div style={{ padding: '20px' }}>
-      <InvoicePDF
-        invoice={{
-          invoice_number: invoice.invoice_number,
-          date: invoice.date,
-          due_date: invoice.due_date,
-          subtotal: invoice.subtotal,
-          tax_rate: invoice.tax_rate,
-          tax_amount: invoice.tax_amount,
-          total: invoice.total
-        }}
-        company={companyData}
-        customer={{
-          name: invoice.customer_name || '',
-          address: customerData?.address || '',
-          email: customerData?.email || '',
-          phone: customerData?.phone || ''
-        }}
-        items={items.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          amount: item.amount
-        }))}
-      />
+    <div style={{ width: '100%', height: '100vh' }}>
+      <ReactErrorBoundary fallbackRender={fallbackRender}>
+        <Suspense fallback={<Spin size="large" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }} />}>
+          <PDFViewer width="100%" height="100%">
+            <InvoicePDF {...invoiceData} />
+          </PDFViewer>
+        </Suspense>
+      </ReactErrorBoundary>
     </div>
   );
 };
