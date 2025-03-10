@@ -67,6 +67,16 @@ CREATE TABLE invoice_items (
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Create invoice_shares table
+CREATE TABLE invoice_shares (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  invoice_id uuid NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+  token text NOT NULL UNIQUE,
+  created_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  expires_at timestamp with time zone
+);
+
 -- Create RLS policies
 -- Enable RLS on all tables
 ALTER TABLE companies ENABLE ROW LEVEL SECURITY;

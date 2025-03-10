@@ -61,6 +61,7 @@ const InvoiceDetailContent = () => {
   const [loading, setLoading] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
   const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [paymentForm] = Form.useForm();
@@ -237,6 +238,69 @@ const InvoiceDetailContent = () => {
     }
   };
 
+  const handlePreviewPDF = async () => {
+    if (!invoice) return;
+    
+    try {
+      setLoading(true);
+      
+      // Fetch additional customer details
+      const { data: customerData, error: customerError } = await supabase
+        .from('customers')
+        .select('email, phone, address')
+        .eq('id', invoice?.customer_id)
+        .single();
+  
+      if (customerError) throw customerError;
+  
+      // Fetch company details
+      const { data: companyData, error: companyError } = await supabase
+        .from('companies')
+        .select('name, address, bank_name, bank_account, email, phone, logo_url')
+        .eq('id', invoice.company_id)
+        .single();
+  
+      if (companyError) throw companyError;
+  
+      // Preload company logo if exists
+      if (companyData.logo_url) {
+        await new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.fillStyle = '#FFFFFF';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0);
+              companyData.logo_url = canvas.toDataURL('image/png');
+            }
+            resolve(null);
+          };
+          img.onerror = () => {
+            console.warn('Failed to load company logo');
+            companyData.logo_url = undefined;
+            resolve(null);
+          };
+          img.src = companyData.logo_url;
+        });
+      }
+  
+      setCompanyData(companyData);
+      setCustomerData(customerData);
+      setIsPreviewModalVisible(true);
+      
+    } catch (error) {
+      console.error('Error generating preview:', error);
+      message.error('Failed to generate preview');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!invoice) return null;
 
   const handlePaymentSubmit = async () => {
@@ -293,25 +357,6 @@ const InvoiceDetailContent = () => {
     try {
       setShareLoading(true);
       
-      // Fetch company and customer data before sharing
-      const { data: companyResult, error: companyError } = await supabase
-        .from('companies')
-        .select('name, address, bank_name, bank_account, email, phone, logo_url')
-        .eq('id', invoice.company_id)
-        .single();
-
-      if (companyError) throw companyError;
-      setCompanyData(companyResult);
-
-      const { data: customerResult, error: customerError } = await supabase
-        .from('customers')
-        .select('email, phone, address')
-        .eq('id', invoice.customer_id)
-        .single();
-
-      if (customerError) throw customerError;
-      setCustomerData(customerResult);
-
       const { data, error } = await supabase
         .from('invoice_shares')
         .insert([{
@@ -326,7 +371,7 @@ const InvoiceDetailContent = () => {
 
       const shareUrl = `${window.location.origin}/invoice/share/${data.token}`;
       setPreviewUrl(shareUrl);
-      setIsPreviewModalVisible(true);
+      setIsShareModalVisible(true);
       message.success('Share link generated successfully');
     } catch (error) {
       console.error('Error sharing invoice:', error);
@@ -337,8 +382,8 @@ const InvoiceDetailContent = () => {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      <Space direction="vertical" size="large" style={{ width: '100vw' }}>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <Button 
           icon={<ArrowLeftOutlined />} 
           onClick={() => navigate('/invoices')}
@@ -347,7 +392,11 @@ const InvoiceDetailContent = () => {
         </Button>
 
         <Card>
-          <Descriptions title="Invoice Details" bordered>
+          <Descriptions 
+            title="Invoice Details" 
+            bordered 
+            column={{ xxl: 4, xl: 3, lg: 3, md: 2, sm: 2, xs: 1 }}
+          >
             <Descriptions.Item label="Invoice Number">{invoice?.invoice_number}</Descriptions.Item>
             <Descriptions.Item label="Date">{invoice?.date}</Descriptions.Item>
             <Descriptions.Item label="Due Date">{invoice?.due_date}</Descriptions.Item>
@@ -367,30 +416,35 @@ const InvoiceDetailContent = () => {
           </Descriptions>
         </Card>
 
-        <Card title="Items">
-          <Table
+        <Card title="Items" bodyStyle={{ padding: '0' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <Table
             dataSource={items}
             columns={[
               {
                 title: 'Description',
                 dataIndex: 'description',
                 key: 'description',
+                ellipsis: true
               },
               {
                 title: 'Quantity',
                 dataIndex: 'quantity',
                 key: 'quantity',
+                width: 100
               },
               {
                 title: 'Unit Price',
                 dataIndex: 'unit_price',
                 key: 'unit_price',
+                width: 120,
                 render: (price: number) => `$${price.toFixed(2)}`,
               },
               {
                 title: 'Amount',
                 dataIndex: 'amount',
                 key: 'amount',
+                width: 120,
                 render: (amount: number) => `$${amount.toFixed(2)}`,
               },
             ]}
@@ -412,9 +466,10 @@ const InvoiceDetailContent = () => {
               </Table.Summary>
             )}
           />
+          </div>
         </Card>
 
-        <Space>
+        <Space wrap>
           <Button
             type="primary"
             onClick={() => handleDownloadPDF()}
@@ -428,6 +483,12 @@ const InvoiceDetailContent = () => {
             loading={shareLoading}
           >
             Share
+          </Button>
+          <Button
+            onClick={handlePreviewPDF}
+            loading={loading}
+          >
+            Preview PDF
           </Button>
           <Button
             type="default"
@@ -470,17 +531,24 @@ const InvoiceDetailContent = () => {
 
       <Modal
         title="Share Invoice"
-        open={isPreviewModalVisible}
+        open={isShareModalVisible}
         onOk={() => {
-          navigator.clipboard.writeText(previewUrl);
-          message.success('Share link copied to clipboard');
-          setIsPreviewModalVisible(false);
+          navigator.clipboard.writeText(previewUrl).then(() => {
+            message.success('Share link copied to clipboard');
+            setIsShareModalVisible(false);
+          }).catch(() => {
+            message.error('Failed to copy link to clipboard');
+          });
         }}
-        onCancel={() => setIsPreviewModalVisible(false)}
+        onCancel={() => setIsShareModalVisible(false)}
         okText="Copy Link"
       >
         <p>Share this link to allow others to view the invoice:</p>
-        <Input value={previewUrl} readOnly />
+        <Input 
+          value={previewUrl} 
+          readOnly 
+          style={{ width: '100%' }}
+        />
       </Modal>
       <Modal
         title="Preview Invoice"
@@ -488,9 +556,10 @@ const InvoiceDetailContent = () => {
         onCancel={() => setIsPreviewModalVisible(false)}
         footer={null}
         width={1000}
+        bodyStyle={{ padding: '20px', maxHeight: '80vh', overflow: 'auto' }}
       >
-        <div style={{ padding: '20px' }}>
-          {companyData && <InvoicePDF
+        <div style={{ padding: '20px', backgroundColor: 'white' }}>
+          {companyData && customerData && <InvoicePDF
             invoice={{
               invoice_number: invoice.invoice_number,
               date: invoice.date,
@@ -500,20 +569,12 @@ const InvoiceDetailContent = () => {
               tax_amount: invoice.tax_amount,
               total: invoice.total
             }}
-            company={companyData || {
-              name: '',
-              address: '',
-              bank_name: '',
-              bank_account: '',
-              email: '',
-              phone: '',
-              logo_url: undefined
-            }}
+            company={companyData}
             customer={{
               name: invoice.customer_name || '',
-              address: customerData?.address || '',
-              email: customerData?.email || '',
-              phone: customerData?.phone || ''
+              address: customerData.address || '',
+              email: customerData.email || '',
+              phone: customerData.phone || ''
             }}
             items={items.map(item => ({
               description: item.description,

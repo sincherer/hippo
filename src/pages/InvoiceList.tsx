@@ -239,13 +239,15 @@ const InvoiceList = () => {
   };
 
   return (
-    <div>
-      <Space direction="vertical" style={{ width: '100%', marginTop: '24px' }} size="large"/>
-      <Space direction="horizontal" align="center" style={{ width: '100%', marginTop: '24px', justifyContent: 'space-between' }} size="large">
-      <h2 style={{ margin: 8 }}>Invoices</h2> 
-      <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/invoices/new')}>
-      Create Invoice</Button></Space>
-      <Space direction="vertical" style={{ width: '100%', marginTop: '24px' }} size="large"></Space>
+    <div style={{ width: '100%', padding: '24px' }}>
+      <Space direction="vertical" style={{ width: '100%' }} size="large">
+        <Space direction="horizontal" align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
+          <h2 style={{ margin: 0 }}>Invoices</h2>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/invoices/new')}>
+            Create Invoice
+          </Button>
+        </Space>
+        
         <Segmented
           options={[
             { label: 'All', value: 'all' },
@@ -254,82 +256,81 @@ const InvoiceList = () => {
           ]}
           value={filter}
           onChange={value => setFilter(value.toString())}
+          style={{ marginBottom: '24px' }}
         />
         
-     
-      <Space direction="vertical" style={{ width: '100%', marginTop: '24px' }} size="large"></Space>
-      <div style={{ marginBottom: 16 }}>
-      </div>
-      <Row gutter={[16, 16]}>
-        {filteredInvoices.map(invoice => (
-          <Col xs={24} key={invoice.id}>
-            <Card
-              hoverable
-              actions={[
-                <Link to={`/invoices/${invoice.id}`} key="view">View</Link>,
-                <Button 
-                  type="link" 
-                  onClick={() => handleDownloadPDF(invoice)}
-                  loading={loading[invoice.id]}
-                  key="download"
-                >
-                  Download
-                </Button>,
-                <Button 
-                  type="link" 
-                  danger 
-                  onClick={() => handleDelete(invoice)}
-                  key="delete"
-                >
-                  Delete
-                </Button>
-              ]}
-            >
-              <Card.Meta
-                avatar={invoice.company_logo ? (
-                  <Avatar size={64} src={invoice.company_logo} />
-                ) : (
-                  <Avatar size={64} style={{ backgroundColor: '#1890ff' }}>
-                    {invoice.company_name ? invoice.company_name.charAt(0).toUpperCase() : '?'}
-                  </Avatar>
-                )}
-                title={<Space direction="vertical" size={0}>
-                  <div>{invoice.invoice_number}</div>
-                  <Tag color={invoice.status === 'paid' ? 'green' : 'orange'}>
-                    {invoice.status.toUpperCase()}
-                  </Tag>
-                </Space>}
-                description={
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <div>
-                      <strong>Customer:</strong> {invoice.customer_name}
-                    </div>
-                    <div>
-                      <strong>Date:</strong> {invoice.date}
-                    </div>
-                    <div>
-                      <strong>Amount:</strong> ${invoice.total.toFixed(2)}
-                    </div>
-                  </Space>
-                }
-              />
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      <Modal
-        title="Delete Invoice"
-        open={deleteModalVisible}
-        onOk={handleDeleteConfirm}
-        onCancel={() => setDeleteModalVisible(false)}
-        okText="Delete"
-        okButtonProps={{ danger: true }}
-      >
-        <p>Are you sure you want to delete this invoice? This action cannot be undone.</p>
-      </Modal>
-    </div>
-  );
+        <Row gutter={[16, 16]} style={{ width: '100%' }}>
+          {filteredInvoices.map(invoice => (
+            <Col xs={24} key={invoice.id}>
+              <Card
+                hoverable
+                actions={[
+                  <Link to={`/invoices/${invoice.id}`} key="view">View</Link>,
+                  <Button 
+                    type="link" 
+                    onClick={() => handleDownloadPDF(invoice)}
+                    loading={loading[invoice.id]}
+                    key="download"
+                  >
+                    Download
+                  </Button>,
+                  <Button 
+                    type="link" 
+                    danger 
+                    onClick={() => handleDelete(invoice)}
+                    key="delete"
+                  >
+                    Delete
+                  </Button>
+                ]}
+              >
+                <Card.Meta
+                  avatar={invoice.company_logo ? (
+                    <Avatar size={64} src={invoice.company_logo} />
+                  ) : (
+                    <Avatar size={64} style={{ backgroundColor: '#1890ff' }}>
+                      {invoice.company_name ? invoice.company_name.charAt(0).toUpperCase() : '?'}
+                    </Avatar>
+                  )}
+                  title={
+                    <Space direction="vertical" size={0}>
+                      <div>{invoice.invoice_number}</div>
+                      <Tag color={invoice.status === 'paid' ? 'green' : 'orange'}>
+                        {invoice.status.toUpperCase()}
+                      </Tag>
+                    </Space>
+                  }
+                  description={
+                    <Space direction="vertical" style={{ width: '100%' }}>
+                      <div>
+                        <strong>Customer:</strong> {invoice.customer_name}
+                      </div>
+                      <div>
+                        <strong>Date:</strong> {invoice.date}
+                      </div>
+                      <div>
+                        <strong>Amount:</strong> ${invoice.total.toFixed(2)}
+                      </div>
+                    </Space>
+                  }
+                />
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      </Space>
+    <Modal
+      title="Delete Invoice"
+      open={deleteModalVisible}
+      onOk={handleDeleteConfirm}
+      onCancel={() => setDeleteModalVisible(false)}
+      okText="Delete"
+      okButtonProps={{ danger: true }}
+    >
+      <p>Are you sure you want to delete this invoice? This action cannot be undone.</p>
+    </Modal>
+  </div>
+);
 };
 
 export default InvoiceList;
