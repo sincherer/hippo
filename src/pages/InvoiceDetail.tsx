@@ -369,7 +369,7 @@ const InvoiceDetailContent = () => {
 
       if (error) throw error;
 
-      const shareUrl = `${window.location.origin}/invoice/share/${data.token}`;
+      const shareUrl = `${window.location.origin}/hippo/invoice/share/${data.token}`;
       setPreviewUrl(shareUrl);
       setIsShareModalVisible(true);
       message.success('Share link generated successfully');
