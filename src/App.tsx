@@ -1,11 +1,6 @@
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { Layout } from 'antd';
-import {
-  FileOutlined,
-  SettingOutlined,
-} from '@ant-design/icons';
-import hippoLogo from './assets/hippo.webp';
-import styles from './App.module.css';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import MainLayout from './components/MainLayout';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Dashboard from './pages/Dashboard';
 import CustomerList from './pages/CustomerList';
 import CreateCustomer from './pages/CreateCustomer';
@@ -18,115 +13,11 @@ import SignUp from './pages/SignUp';
 import CreateCompany from './pages/CreateCompany';
 import UpdateProfile from './components/UpdateProfile';
 import PublicInvoicePreview from './pages/PublicInvoicePreview';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { Segmented } from 'antd';
 import React from 'react';
-
-const { Header, Content } = Layout;
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   return user ? <>{children}</> : <Navigate to="/login" />;
-}
-
-function MainLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const menuItems = [
-    {
-      key: '1',
-      icon: <FileOutlined />,
-      label: 'Invoices',
-      value: '/invoices',
-    },
-    {
-      key: '2',
-      icon: <SettingOutlined />,
-      label: 'Settings',
-      value: '/settings',
-    },
-  ];
-
-  return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ 
-        position: 'fixed',
-        width: '100%',
-        zIndex: 1000,
-        padding: '0 16px',
-        background: '#fff',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <img
-              src={hippoLogo}
-              alt="Hippo Logo"
-              style={{
-                width: 40,
-                height: 40,
-                objectFit: 'contain',
-                borderRadius: 50,
-                cursor: 'pointer'
-              }}
-              onClick={() => navigate('/')}
-            />
-            <div
-              style={{
-                fontSize: '18px',
-                fontWeight: 'bold',
-                marginLeft: 8,
-                display: 'block',
-                cursor: 'pointer'
-              }}
-              className={styles.hippoText}
-              onClick={() => navigate('/')}
-            >
-              Hippo
-            </div>
-          </div>
-          <Segmented
-            options={menuItems.map(item => ({
-              label: (
-                <div style={{ padding: '4px 0' }}>
-                  {React.cloneElement(item.icon, { style: { marginRight: 4 } })}
-                  <span className={styles.segmentedLabel}>{item.label}</span>
-                </div>
-              ),
-              value: item.value
-            }))}
-            value={location.pathname}
-            onChange={(value: string) => navigate(value)}
-            style={{ backgroundColor: '#f0f2f5' }}
-          />
-        </div>
-        
-      </Header>
-      <Content style={{ 
-        marginTop: 64,
-        background: '#fff',
-        padding: 24,
-        borderRadius: 4
-      }}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="customers/new" element={<CreateCustomer />} />
-          <Route path="invoices" element={<InvoiceList />} />
-          <Route path="invoices/new" element={<CreateInvoice />} />
-          <Route path="invoices/:id" element={<InvoiceDetail />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="profile" element={<UpdateProfile isEditing={false} setIsEditing={() => {}} />} />
-          <Route path="customers" element={<CustomerList />} />
-          <Route path="companies/new" element={<CreateCompany />} />
-          <Route path="invoice/share/:shareToken" element={<PublicInvoicePreview />} />
-        </Routes>
-      </Content>
-    </Layout>
-  );
 }
 
 function App() {
@@ -136,15 +27,15 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/invoice/share/:shareToken" element={<PublicInvoicePreview />} />
-        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/invoices" element={<ProtectedRoute><InvoiceList /></ProtectedRoute>} />
-        <Route path="/invoices/create" element={<ProtectedRoute><CreateInvoice /></ProtectedRoute>} />
-        <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceDetail /></ProtectedRoute>} />
-        <Route path="/customers" element={<ProtectedRoute><CustomerList /></ProtectedRoute>} />
-        <Route path="/customers/create" element={<ProtectedRoute><CreateCustomer /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/companies/create" element={<ProtectedRoute><CreateCompany /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><UpdateProfile /></ProtectedRoute>} />
+        <Route path="/" element={<ProtectedRoute><MainLayout><Dashboard /></MainLayout></ProtectedRoute>} />
+        <Route path="/invoices" element={<ProtectedRoute><MainLayout><InvoiceList /></MainLayout></ProtectedRoute>} />
+        <Route path="/invoices/new" element={<ProtectedRoute><MainLayout><CreateInvoice /></MainLayout></ProtectedRoute>} />
+        <Route path="/invoices/:id" element={<ProtectedRoute><MainLayout><InvoiceDetail /></MainLayout></ProtectedRoute>} />
+        <Route path="/customers" element={<ProtectedRoute><MainLayout><CustomerList /></MainLayout></ProtectedRoute>} />
+        <Route path="/customers/create" element={<ProtectedRoute><MainLayout><CreateCustomer /></MainLayout></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><MainLayout><Settings /></MainLayout></ProtectedRoute>} />
+        <Route path="/companies/create" element={<ProtectedRoute><MainLayout><CreateCompany /></MainLayout></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><MainLayout><UpdateProfile isEditing={false} setIsEditing={() => {}} /></MainLayout></ProtectedRoute>} />
       </Routes>
     </AuthProvider>
   );

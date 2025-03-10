@@ -10,6 +10,7 @@
 
 .ant-layout {
   min-height: 100vh !important;
+  background: #ffffff;
 }
 
 .ant-layout-sider-children {
@@ -20,47 +21,39 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-}
-
-/* Add this new style for the content */
-.ant-layout-content {
   margin: 88px 24px 24px !important;
-  /* width: calc(100% - 48px) !important; */
-  width: 100vw!important;
+  width: calc(100% - 48px) !important;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-/* Remove unused logo styles */
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.ant-layout-header {
+  height: 64px;
+  line-height: 64px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.content-wrapper {
+  margin: 24px;
+  padding: 24px;
+  background: #fff;
+  min-height: 280px;
+  border-radius: 4px;
 }
 
 @media (max-width: 768px) {
   .hippoText {
     display: none !important;
+  }
+  
+  .ant-layout-content {
+    margin: 88px 16px 16px !important;
+    width: calc(100% - 32px) !important;
   }
 }
 

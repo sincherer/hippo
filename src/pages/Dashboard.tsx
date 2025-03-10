@@ -79,6 +79,9 @@ const Dashboard = () => {
     if (user) {
       fetchStats();
     }
+    return () => {
+      setFilter('all'); // Reset filter when component unmounts
+    };
   }, [user, fetchStats]);
 
   const filteredInvoices = invoices.filter(invoice => {

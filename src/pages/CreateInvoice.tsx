@@ -24,7 +24,7 @@ interface FormValues {
 interface InvoiceItem {
   description: string;
   quantity: number;
-  price: number;
+  unit_price: number;
 }
 const CreateInvoice = () => {
   const { user } = useAuth();
@@ -135,10 +135,25 @@ const CreateInvoice = () => {
   }, [user, fetchCompanies]);
   const onFinish = async (values: FormValues) => {
     try {
+      // Validate items exist
+      if (!values.items || values.items.length === 0) {
+        message.error('Please add at least one item to the invoice');
+        return;
+      }
+
+      // Validate each item has valid quantity and unit price
+      const invalidItems = values.items.filter(
+        item => !item.quantity || !item.unit_price || item.quantity <= 0 || item.unit_price <= 0
+      );
+      if (invalidItems.length > 0) {
+        message.error('Please ensure all items have valid quantity and price');
+        return;
+      }
+
       // Calculate subtotal and total
-      const items = values.items || [];
+      const items = values.items;
       const subtotal = items.reduce((sum: number, item: InvoiceItem) => {
-        return sum + (item.quantity * item.price);
+        return sum + (item.quantity * item.unit_price);
       }, 0);
       const tax_rate = 0; // You can make this configurable later
       const tax_amount = subtotal * (tax_rate / 100);
@@ -158,14 +173,20 @@ const CreateInvoice = () => {
           subtotal,
           tax_rate,
           tax_amount,
-          total,
-          created_at: new Date().toISOString()
+          total
         }])
         .select()
         .single();
-
-      if (invoiceError) throw invoiceError;
-
+  
+      if (invoiceError) {
+        console.error('Error creating invoice:', invoiceError);
+        throw new Error('Failed to create invoice');
+      }
+  
+      if (!invoice) {
+        throw new Error('No invoice data returned after creation');
+      }
+  
       // Then, create invoice items
       if (items.length > 0) {
         const { error: itemsError } = await supabase
@@ -175,19 +196,22 @@ const CreateInvoice = () => {
               invoice_id: invoice.id,
               description: item.description,
               quantity: item.quantity,
-              unit_price: item.price,
-              amount: item.quantity * item.price
+              unit_price: item.unit_price,
+              amount: item.quantity * item.unit_price
             }))
           );
-
-        if (itemsError) throw itemsError;
+  
+        if (itemsError) {
+          console.error('Error creating invoice items:', itemsError);
+          throw new Error('Failed to create invoice items');
+        }
       }
-
+  
       message.success('Invoice created successfully');
       navigate('/invoices');
     } catch (error) {
       console.error('Error creating invoice:', error);
-      message.error('Failed to create invoice');
+      message.error(error instanceof Error ? error.message : 'Failed to create invoice');
     }
   };
   return (
@@ -364,7 +388,7 @@ const CreateInvoice = () => {
                             />
                           </Form.Item>
                           <Form.Item 
-                            name={[name, 'price']} 
+                            name={[name, 'unit_price']} 
                             label="Price"
                             rules={[{ required: true }]}
                           >

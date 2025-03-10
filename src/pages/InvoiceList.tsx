@@ -74,6 +74,9 @@ const InvoiceList = () => {
     if (user) {
       fetchInvoices();
     }
+    return () => {
+      setFilter('all'); // Reset filter when component unmounts
+    };
   }, [user, fetchInvoices]);
 
   const handleDownloadPDF = async (invoice: Invoice) => {

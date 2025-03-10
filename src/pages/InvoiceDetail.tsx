@@ -108,7 +108,7 @@ const InvoiceDetailContent = () => {
   }, [id]);
 
   useEffect(() => {
-    if (id && user) {
+    if (id && user && id !== 'new') {
       fetchInvoiceDetails();
       fetchInvoiceItems();
     }
