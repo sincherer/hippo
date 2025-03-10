@@ -61,8 +61,8 @@ const InvoiceDetailContent = () => {
   const [shareLoading, setShareLoading] = useState(false);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const [isShareModalVisible, setIsShareModalVisible] = useState(false);
+  const [previewUrl] = useState<string>('');
   const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
   const [paymentForm] = Form.useForm();
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [customerData, setCustomerData] = useState<CustomerData | null>(null);
@@ -548,10 +548,10 @@ const InvoiceDetailContent = () => {
         open={isShareModalVisible}
         onOk={() => {
           navigator.clipboard.writeText(previewUrl).then(() => {
-            message.success('Share link copied to clipboard');
+            antdMessage.success('Share link copied to clipboard');
             setIsShareModalVisible(false);
           }).catch(() => {
-            message.error('Failed to copy link to clipboard');
+            antdMessage.error('Failed to copy link to clipboard');
           });
         }}
         onCancel={() => setIsShareModalVisible(false)}
