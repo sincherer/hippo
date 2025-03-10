@@ -1,4 +1,4 @@
-import { Card, Descriptions, Table, Button, Space, message, Modal, Form, Select, Input, Tag } from 'antd';
+import { Card, Descriptions, Table, Button, Space, message as antdMessage, Modal, Form, Select, Input, Tag } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect, useCallback } from 'react';
@@ -58,11 +58,11 @@ const InvoiceDetailContent = () => {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [shareLoading, setShareLoading] = useState(false);
+  //const [shareLoading, setShareLoading] = useState(false);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
   const [isShareModalVisible, setIsShareModalVisible] = useState(false);
   const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
+  //const [previewUrl, setPreviewUrl] = useState<string>('');
   const [paymentForm] = Form.useForm();
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [customerData, setCustomerData] = useState<CustomerData | null>(null);
@@ -87,7 +87,7 @@ const InvoiceDetailContent = () => {
       }
     } catch (error) {
       console.error('Error fetching invoice:', error);
-      message.error('Failed to fetch invoice details');
+      antdmessage.error('Failed to fetch invoice details');
     }
   }, [id]);
 
@@ -102,7 +102,7 @@ const InvoiceDetailContent = () => {
       setItems(data || []);
     } catch (error) {
       console.error('Error fetching invoice items:', error);
-      message.error('Failed to fetch invoice items');
+      antdmessage.error('Failed to fetch invoice items');
     }
   }, [id]);
 
@@ -180,10 +180,10 @@ const InvoiceDetailContent = () => {
       // Clean up the URL object
       URL.revokeObjectURL(url);
 
-      message.success('Invoice downloaded successfully');
+      antdmessage.success('Invoice downloaded successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
-      message.error('Failed to generate PDF');
+      antdmessage.error('Failed to generate PDF');
     } finally {
       setLoading(false);
     }
@@ -218,7 +218,7 @@ const InvoiceDetailContent = () => {
       setIsPreviewModalVisible(true);
     } catch (error) {
       console.error('Error preparing PDF preview:', error);
-      message.error('Failed to prepare PDF preview');
+      antdmessage.error('Failed to prepare PDF preview');
     } finally {
       setLoading(false);
     }
@@ -244,13 +244,13 @@ const InvoiceDetailContent = () => {
 
       if (error) throw error;
 
-      message.success('Invoice marked as paid successfully');
+      antdmessage.success('Invoice marked as paid successfully');
       setIsPaymentModalVisible(false);
       paymentForm.resetFields();
       fetchInvoiceDetails();
     } catch (error) {
       console.error('Error updating payment status:', error);
-      message.error('Failed to update payment status');
+      antdmessage.error('Failed to update payment status');
     }
   };
 
@@ -268,11 +268,11 @@ const InvoiceDetailContent = () => {
 
       if (error) throw error;
 
-      message.success('Invoice marked as unpaid successfully');
+      antdmessage.success('Invoice marked as unpaid successfully');
       fetchInvoiceDetails();
     } catch (error) {
       console.error('Error updating payment status:', error);
-      message.error('Failed to update payment status');
+      antdmessage.error('Failed to update payment status');
     }
   };
 
@@ -345,7 +345,7 @@ const InvoiceDetailContent = () => {
             title: `Invoice #${invoice.invoice_number}`,
             text: message
           });
-          message.success('Invoice shared successfully');
+          antdmessage.success('Invoice shared successfully');
         } catch (error) {
           console.error('Error sharing via Web Share API:', error);
           // Fallback to WhatsApp Web link
@@ -357,7 +357,7 @@ const InvoiceDetailContent = () => {
       }
     } catch (error) {
       console.error('Error sharing via WhatsApp:', error);
-      message.error('Failed to share invoice via WhatsApp');
+      antdmessage.error('Failed to share invoice via WhatsApp');
     } finally {
       setLoading(false);
     }
