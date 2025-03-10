@@ -135,14 +135,16 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <MainLayout />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/invoice/share/:shareToken" element={<PublicInvoicePreview />} />
+        <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/invoices" element={<ProtectedRoute><InvoiceList /></ProtectedRoute>} />
+        <Route path="/invoices/create" element={<ProtectedRoute><CreateInvoice /></ProtectedRoute>} />
+        <Route path="/invoices/:id" element={<ProtectedRoute><InvoiceDetail /></ProtectedRoute>} />
+        <Route path="/customers" element={<ProtectedRoute><CustomerList /></ProtectedRoute>} />
+        <Route path="/customers/create" element={<ProtectedRoute><CreateCustomer /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/companies/create" element={<ProtectedRoute><CreateCompany /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><UpdateProfile /></ProtectedRoute>} />
       </Routes>
     </AuthProvider>
   );
