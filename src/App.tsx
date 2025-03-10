@@ -17,6 +17,7 @@ import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import CreateCompany from './pages/CreateCompany';
 import UpdateProfile from './components/UpdateProfile';
+import PublicInvoicePreview from './pages/PublicInvoicePreview';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Segmented } from 'antd';
 import React from 'react';
@@ -121,6 +122,7 @@ function MainLayout() {
           <Route path="profile" element={<UpdateProfile isEditing={false} setIsEditing={() => {}} />} />
           <Route path="customers" element={<CustomerList />} />
           <Route path="companies/new" element={<CreateCompany />} />
+          <Route path="invoice/share/:shareToken" element={<PublicInvoicePreview />} />
         </Routes>
       </Content>
     </Layout>

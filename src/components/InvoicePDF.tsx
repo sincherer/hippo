@@ -82,6 +82,9 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, ite
       dataIndex: 'description',
       key: 'description',
       width: '40%',
+      render: (description: string) => (
+        <div dangerouslySetInnerHTML={{ __html: description.replace(/\n/g, '<br />') }} />
+      ),
     },
     {
       title: 'Date',
@@ -201,7 +204,7 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, ite
           </div>
           <div style={{ marginTop: '8px', fontSize: '9px', lineHeight: '1.2' }}>
             <Text>{customer.name}</Text><br />
-            <Text>{customer.address}</Text><br />
+            <div dangerouslySetInnerHTML={{ __html: customer.address.replace(/\n/g, '<br />') }} />
             <Text>{customer.email}</Text><br />
             <Text>{customer.phone}</Text><br />
           </div>
@@ -276,7 +279,7 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, ite
         <Row justify="space-between">
           <Col span={12}>
             <Text strong>{company.name}</Text><br />
-            <Text>{company.address}</Text><br />
+            <div dangerouslySetInnerHTML={{ __html: company.address.replace(/\n/g, '<br />') }} />
             <Text>{company.email}</Text><br />
             <Text>{company.phone}</Text><br />
           </Col>
