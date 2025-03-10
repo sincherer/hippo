@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../config/supabase';
 import InvoicePDF from '../components/InvoicePDF';
 import * as ReactPDF from '@react-pdf/renderer';
-import { CheckOutlined, ArrowLeftOutlined, ShareAltOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ShareAltOutlined } from '@ant-design/icons';
 import { PDFViewer } from '@react-pdf/renderer';
 
 
@@ -363,34 +363,7 @@ const InvoiceDetailContent = () => {
     }
   };
 
-  const handleShare = async () => {
-    if (!invoice) return;
-    try {
-      setShareLoading(true);
-      
-      const { data, error } = await supabase
-        .from('invoice_shares')
-        .insert([{
-          invoice_id: invoice.id,
-          token: crypto.randomUUID(),
-          created_by: user?.id
-        }])
-        .select()
-        .single();
 
-      if (error) throw error;
-
-      const shareUrl = `${window.location.origin}/hippo/#/invoice/share/${data.token}`;
-      setPreviewUrl(shareUrl);
-      setIsShareModalVisible(true);
-      message.success('Share link generated successfully');
-    } catch (error) {
-      console.error('Error sharing invoice:', error);
-      message.error('Failed to generate share link');
-    } finally {
-      setShareLoading(false);
-    }
-  };
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
