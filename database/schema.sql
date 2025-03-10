@@ -83,6 +83,20 @@ ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invoice_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invoice_shares ENABLE ROW LEVEL SECURITY;
+
+-- Invoice shares policies
+CREATE POLICY "Anyone can view shared invoices"
+  ON invoice_shares FOR SELECT
+  USING (true);
+
+CREATE POLICY "Users can create invoice shares"
+  ON invoice_shares FOR INSERT
+  WITH CHECK (auth.uid() = created_by);
+
+CREATE POLICY "Users can delete their own invoice shares"
+  ON invoice_shares FOR DELETE
+  USING (auth.uid() = created_by);
 
 -- Companies policies
 CREATE POLICY "Users can view their own companies"
@@ -167,3 +181,50 @@ CREATE POLICY "Users can delete their own invoice items"
     WHERE invoices.id = invoice_items.invoice_id
     AND invoices.user_id = auth.uid()
   ));
+
+-- Add policies for public access to shared invoices and related data
+CREATE POLICY "Public can view shared invoices"
+  ON invoices FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM invoice_shares
+      WHERE invoice_shares.invoice_id = invoices.id
+      AND invoice_shares.token = current_setting('app.current_share_token', true)
+      AND (invoice_shares.expires_at IS NULL OR invoice_shares.expires_at > NOW())
+    )
+  );
+
+CREATE POLICY "Public can view companies of shared invoices"
+  ON companies FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM invoices
+      JOIN invoice_shares ON invoice_shares.invoice_id = invoices.id
+      WHERE invoices.company_id = companies.id
+      AND invoice_shares.token = current_setting('app.current_share_token', true)
+      AND (invoice_shares.expires_at IS NULL OR invoice_shares.expires_at > NOW())
+    )
+  );
+
+CREATE POLICY "Public can view customers of shared invoices"
+  ON customers FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM invoices
+      JOIN invoice_shares ON invoice_shares.invoice_id = invoices.id
+      WHERE invoices.customer_id = customers.id
+      AND invoice_shares.token = current_setting('app.current_share_token', true)
+      AND (invoice_shares.expires_at IS NULL OR invoice_shares.expires_at > NOW())
+    )
+  );
+
+CREATE POLICY "Public can view items of shared invoices"
+  ON invoice_items FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM invoice_shares
+      WHERE invoice_shares.invoice_id = invoice_items.invoice_id
+      AND invoice_shares.token = current_setting('app.current_share_token', true)
+      AND (invoice_shares.expires_at IS NULL OR invoice_shares.expires_at > NOW())
+    )
+  );

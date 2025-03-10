@@ -18,6 +18,9 @@ interface Invoice {
   customer_id: string;
   company_id: string;
   customer_name?: string;
+  customers?: {
+    name: string;
+  };
 }
 
 interface InvoiceItem {
@@ -57,28 +60,45 @@ const PublicInvoicePreview = () => {
   useEffect(() => {
     const fetchInvoiceData = async () => {
       try {
+        // Set the share token in the database session
+        await supabase.rpc('set_share_token', { token: shareToken });
+
         // Fetch invoice data using share token
         const { data: shareData, error: shareError } = await supabase
           .from('invoice_shares')
-          .select('invoice_id')
+          .select('invoice_id, expires_at')
           .eq('token', shareToken)
-          .single()
-          .throwOnError();
+          .maybeSingle();
 
-        if (shareError) throw new Error('Invalid or expired share link');
+        if (!shareData || shareError) {
+          throw new Error('Invalid share link');
+        }
+
+        if (shareData.expires_at && new Date(shareData.expires_at) < new Date()) {
+          throw new Error('Share link has expired');
+        }
 
         // Fetch invoice details
         const { data: invoiceData, error: invoiceError } = await supabase
           .from('invoices')
           .select(`
-            *,
-            customers (name)
+            id,
+            invoice_number,
+            date,
+            due_date,
+            subtotal,
+            tax_rate,
+            tax_amount,
+            total,
+            customer_id,
+            company_id,
+            customers !inner(name)
           `)
           .eq('id', shareData.invoice_id)
           .single()
           .throwOnError();
 
-        if (invoiceError) throw invoiceError;
+        if (!invoiceData || invoiceError) throw invoiceError || new Error('Invoice not found');
 
         // Fetch invoice items
         const { data: itemsData, error: itemsError } = await supabase
@@ -142,8 +162,18 @@ const PublicInvoicePreview = () => {
         if (customerError) throw customerError;
 
         setInvoice({
-          ...invoiceData,
-          customer_name: invoiceData.customers?.name
+          id: invoiceData.id,
+          invoice_number: invoiceData.invoice_number,
+          date: invoiceData.date,
+          due_date: invoiceData.due_date,
+          subtotal: invoiceData.subtotal,
+          tax_rate: invoiceData.tax_rate,
+          tax_amount: invoiceData.tax_amount,
+          total: invoiceData.total,
+          customer_id: invoiceData.customer_id,
+          company_id: invoiceData.company_id,
+          customer_name: invoiceData.customers?.[0]?.name
+
         });
         setItems(itemsData || []);
         setCompanyData(company);
@@ -213,7 +243,7 @@ const PublicInvoicePreview = () => {
   );
 
   return (
-    <div style={{ width: '100%', height: '100vh' }}>
+    <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <ReactErrorBoundary fallbackRender={fallbackRender}>
         <Suspense fallback={<Spin size="large" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }} />}>
           <PDFViewer width="100%" height="100%">
