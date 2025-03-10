@@ -69,7 +69,7 @@ const PublicInvoicePreview = () => {
           .from('invoice_shares')
           .select('invoice_id, expires_at')
           .eq('token', shareToken)
-          .single();
+          .maybeSingle();
 
         if (!shareData || shareError) {
           throw new Error('Invalid share link');
@@ -93,11 +93,10 @@ const PublicInvoicePreview = () => {
             total,
             customer_id,
             company_id,
-            customers!inner (name)
+            customers (name)
           `)
           .eq('id', shareData.invoice_id)
-          .single()
-          .throwOnError();
+          .single();
 
         if (!invoiceData || invoiceError) throw invoiceError || new Error('Invoice not found');
 

@@ -276,6 +276,44 @@ const InvoiceDetailContent = () => {
     }
   };
 
+  const handleWhatsAppShare = async () => {
+    if (!invoice || !companyData) return;
+
+    try {
+      setLoading(true);
+      
+      // Generate a share token for the invoice
+      const { data: shareData, error: shareError } = await supabase
+        .from('invoice_shares')
+        .insert([
+          {
+            invoice_id: invoice.id,
+            token: crypto.randomUUID(),
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days expiry
+          }
+        ])
+        .select()
+        .single();
+
+      if (shareError) throw shareError;
+
+      // Create the public share URL
+      const shareUrl = `${window.location.origin}/invoice/share/${shareData.token}`;
+
+      // Create WhatsApp share URL with company name and share link
+      const text = `Invoice ${invoice.invoice_number} from ${companyData.name}\n\nView invoice: ${shareUrl}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+
+      // Open WhatsApp in a new window
+      window.open(whatsappUrl, '_blank');
+    } catch (error) {
+      console.error('Error sharing via WhatsApp:', error);
+      message.error('Failed to share invoice via WhatsApp');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleShare = async () => {
     if (!invoice) return;
     try {
@@ -409,6 +447,13 @@ const InvoiceDetailContent = () => {
             Share
           </Button>
           <Button
+            icon={<ShareAltOutlined />}
+            onClick={handleWhatsAppShare}
+            loading={loading}
+          >
+            Share via WhatsApp
+          </Button>
+          <Button
             onClick={handlePreviewPDF}
             loading={loading}
           >
@@ -422,6 +467,19 @@ const InvoiceDetailContent = () => {
             {invoice?.status === 'paid' ? 'Mark as Unpaid' : 'Record Payment'}
           </Button>
         </Space>
+
+        {companyData && (
+          <Card title="Company Information" style={{ marginTop: '24px' }}>
+            <Descriptions bordered column={{ xxl: 4, xl: 3, lg: 3, md: 2, sm: 2, xs: 1 }}>
+              <Descriptions.Item label="Company Name">{companyData.name}</Descriptions.Item>
+              <Descriptions.Item label="Address">{companyData.address}</Descriptions.Item>
+              <Descriptions.Item label="Phone">{companyData.phone}</Descriptions.Item>
+              <Descriptions.Item label="Email">{companyData.email}</Descriptions.Item>
+              <Descriptions.Item label="Bank Name">{companyData.bank_name}</Descriptions.Item>
+              <Descriptions.Item label="Bank Account">{companyData.bank_account}</Descriptions.Item>
+            </Descriptions>
+          </Card>
+        )}
       </Space>
 
       <Modal

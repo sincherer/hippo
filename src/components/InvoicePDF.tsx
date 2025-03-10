@@ -200,8 +200,23 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, ite
             <Text style={[styles.tableCell, styles.totalCell]}>{invoice.total.toFixed(2)}</Text>
           </View>
         </View>
+      <View style={styles.footer}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.text}>{company.name}</Text>
+          <Text style={styles.text}>{company.address}</Text>
+          <Text style={styles.text}>Phone: {company.phone}</Text>
+          <Text style={styles.text}>Email: {company.email}</Text>
+        </View>
+        {(company.bank_name || company.bank_account) && (
+          <View style={{ flex: 1, alignItems: 'flex-end' }}>
+            {company.bank_name && <Text style={styles.text}>Bank: {company.bank_name}</Text>}
+            {company.bank_account && <Text style={styles.text}>Account: {company.bank_account}</Text>}
+          </View>
+        )}
+      </View>
+      
       </Page>
-    </Document>
+      </Document>
   );
 };
 
