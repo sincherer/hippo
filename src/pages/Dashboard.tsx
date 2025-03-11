@@ -15,6 +15,7 @@ interface Invoice {
   company_logo?: string;
   company_name?: string;
   due_date: string;
+  currency: string;
 }
 
 const Dashboard = () => {
@@ -67,7 +68,8 @@ const Dashboard = () => {
           customer_name: invoice.customers?.name,
           total: invoice.total,
           status: invoice.status,
-          due_date: invoice.due_date
+          due_date: invoice.due_date,
+          currency: invoice.currency
         })));
       }
     } catch (error) {
@@ -170,7 +172,7 @@ const Dashboard = () => {
                     {invoice.status.toUpperCase()}
                   </Tag>
                   <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                    ${invoice.total.toFixed(2)}
+                    {invoice.currency} {invoice.total.toFixed(2)}
                   </div>
                 </Space>
               </div>

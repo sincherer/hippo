@@ -21,8 +21,10 @@ interface Invoice {
   status: 'paid' | 'pending' | 'overdue';
   user_id: string;
   subtotal: number;
+  tax_type: string;
   tax_rate: number;
   tax_amount: number;
+  currency: string;
   total: number;
   customer_name?: string;
   company_name?: string;
@@ -146,8 +148,10 @@ const InvoiceList = () => {
             date: invoice.date,
             due_date: invoice.due_date,
             subtotal: invoice.subtotal,
+            tax_type: invoice.tax_type,
             tax_rate: invoice.tax_rate,
             tax_amount: invoice.tax_amount,
+            currency: invoice.currency,
             total: invoice.total
           }}
           company={companyData}

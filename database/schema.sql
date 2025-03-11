@@ -67,6 +67,18 @@ CREATE TABLE invoice_items (
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Create invoice_payments table
+CREATE TABLE invoice_payments (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  invoice_id uuid NOT NULL REFERENCES invoices(id) ON DELETE CASCADE,
+  amount numeric(10,2) NOT NULL,
+  payment_date timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  payment_method text,
+  payment_remarks text,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- Create invoice_shares table
 CREATE TABLE invoice_shares (
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -84,6 +96,41 @@ ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invoice_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE invoice_shares ENABLE ROW LEVEL SECURITY;
+
+-- Add RLS policies for invoice_payments table
+ALTER TABLE invoice_payments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own invoice payments"
+  ON invoice_payments FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM invoices
+    WHERE invoices.id = invoice_payments.invoice_id
+    AND invoices.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Users can create payments for their own invoices"
+  ON invoice_payments FOR INSERT
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM invoices
+    WHERE invoices.id = invoice_payments.invoice_id
+    AND invoices.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Users can update their own invoice payments"
+  ON invoice_payments FOR UPDATE
+  USING (EXISTS (
+    SELECT 1 FROM invoices
+    WHERE invoices.id = invoice_payments.invoice_id
+    AND invoices.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Users can delete their own invoice payments"
+  ON invoice_payments FOR DELETE
+  USING (EXISTS (
+    SELECT 1 FROM invoices
+    WHERE invoices.id = invoice_payments.invoice_id
+    AND invoices.user_id = auth.uid()
+  ));
 
 -- Invoice shares policies
 CREATE POLICY "Anyone can view shared invoices"

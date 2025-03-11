@@ -19,7 +19,12 @@ interface FormValues {
   customer_id: string;
   due_date: moment.Moment;
   items: InvoiceItem[];
+  tax_type: string;
+  tax_rate: string;
+  currency: string;
+  notes: string;
 }
+
 
 interface InvoiceItem {
   description: string;
@@ -131,12 +136,12 @@ const CreateInvoice = () => {
       const subtotal = items.reduce((sum: number, item: InvoiceItem) => {
         return sum + (item.quantity * item.unit_price);
       }, 0);
-      const tax_rate = 0; // You can make this configurable later
+      const tax_rate = parseFloat(values.tax_rate) || 0; // Initialize from form values
       const tax_amount = subtotal * (tax_rate / 100);
       const total = subtotal + tax_amount;
 
       // First, create the invoice
-      const { data: invoice, error: invoiceError } = await supabase
+      const { data: invoiceData, error: invoiceError } = await supabase
         .from('invoices')
         .insert([{
           invoice_number: `INV-${Date.now()}`,
@@ -147,9 +152,12 @@ const CreateInvoice = () => {
           company_id: values.company_id,
           status: 'unpaid',
           subtotal,
-          tax_rate,
+          tax_type: values.tax_type,
+          tax_rate: values.tax_rate,
           tax_amount,
-          total
+          currency: values.currency,
+          total,
+          notes: values.notes
         }])
         .select()
         .single();
@@ -159,7 +167,7 @@ const CreateInvoice = () => {
         throw new Error('Failed to create invoice');
       }
   
-      if (!invoice) {
+      if (!invoiceData) {
         throw new Error('No invoice data returned after creation');
       }
   
@@ -169,7 +177,7 @@ const CreateInvoice = () => {
           .from('invoice_items')
           .insert(
             items.map((item: InvoiceItem) => ({
-              invoice_id: invoice.id,
+              invoice_id: invoiceData.id,
               description: item.description,
               quantity: item.quantity,
               unit_price: item.unit_price,
@@ -206,6 +214,7 @@ const CreateInvoice = () => {
             rules={[{ required: true, message: 'Please select a company!' }]}
           >
             <Select 
+              showSearch
               placeholder="Select company" 
               size="large" 
               style={{ width: '100%' }}
@@ -272,6 +281,88 @@ const CreateInvoice = () => {
             <DatePicker size="large" style={{ width: '100%' }} />
           </Form.Item>
 
+          <Form.Item
+            label="Currency"
+            name="currency"
+            rules={[{ required: true, message: 'Please select a currency!' }]}
+          >
+            <Select
+              showSearch
+              placeholder="Select currency"
+              size="large"
+              style={{ width: '100%' }}
+            >
+              <Select.Option value="USD">USD - United States Dollar</Select.Option> 
+              <Select.Option value="EUR">EUR - Euro</Select.Option> 
+              <Select.Option value="GBP">GBP - British Pound Sterling</Select.Option> 
+              <Select.Option value="JPY">JPY - Japanese Yen</Select.Option> 
+              <Select.Option value="CNY">CNY - Chinese Yuan</Select.Option> 
+              <Select.Option value="AUD">AUD - Australian Dollar</Select.Option> 
+              <Select.Option value="CAD">CAD - Canadian Dollar</Select.Option> 
+              <Select.Option value="CHF">CHF - Swiss Franc</Select.Option> 
+              <Select.Option value="HKD">HKD - Hong Kong Dollar</Select.Option> 
+              <Select.Option value="SGD">SGD - Singapore Dollar</Select.Option> 
+              <Select.Option value="NZD">NZD - New Zealand Dollar</Select.Option> 
+              <Select.Option value="SEK">SEK - Swedish Krona</Select.Option> 
+              <Select.Option value="NOK">NOK - Norwegian Krone</Select.Option> 
+              <Select.Option value="DKK">DKK - Danish Krone</Select.Option> 
+              <Select.Option value="KRW">KRW - South Korean Won</Select.Option> 
+              <Select.Option value="INR">INR - Indian Rupee</Select.Option> 
+              <Select.Option value="IDR">IDR - Indonesian Rupiah</Select.Option> 
+              <Select.Option value="MYR">MYR - Malaysian Ringgit</Select.Option> 
+              <Select.Option value="THB">THB - Thai Baht</Select.Option> 
+              <Select.Option value="PHP">PHP - Philippine Peso</Select.Option> 
+              <Select.Option value="VND">VND - Vietnamese Dong</Select.Option> 
+              <Select.Option value="ZAR">ZAR - South African Rand</Select.Option> 
+              <Select.Option value="RUB">RUB - Russian Ruble</Select.Option> 
+              <Select.Option value="BRL">BRL - Brazilian Real</Select.Option> 
+              <Select.Option value="MXN">MXN - Mexican Peso</Select.Option> 
+              <Select.Option value="TRY">TRY - Turkish Lira</Select.Option> 
+              <Select.Option value="SAR">SAR - Saudi Riyal</Select.Option> 
+              <Select.Option value="AED">AED - United Arab Emirates Dirham</Select.Option> 
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Tax type"
+            name="tax_type"
+            rules={[{ required: false }]}
+            >
+              <Select
+              placeholder='Select tax type'
+              size="large"
+              style={{ width: '100%' }}
+              >
+              <Select.Option value="SST">SST</Select.Option>
+              <Select.Option value="VAT">VAT</Select.Option>
+              <Select.Option value="GST">GST</Select.Option>
+            </Select>
+          </Form.Item>
+          
+          <Form.Item
+            label="Tax Rate (%)"
+            name="tax_rate"
+            rules={[{ required:false }]}
+            >
+            <InputNumber 
+                min={1} 
+                size="large"
+                style={{ width: '100%' }} 
+              />
+            </Form.Item>
+            
+          <Form.Item
+            label="Notes"
+            name="notes"
+            rules={[{ required: false }]}
+          >
+          
+            <Input.TextArea
+              rows={4}
+              placeholder="Add any additional notes or payment instructions"
+            />
+          </Form.Item>
+
           <Form.Item label="Items">
             <Form.List name="items">
               {(fields, { add, remove }) => (
@@ -311,7 +402,7 @@ const CreateInvoice = () => {
                               min={0} 
                               size="large"
                               style={{ width: '150px' }}
-                              prefix="$" 
+                              prefix={form.getFieldValue('currency') || '$'}
                             />
                           </Form.Item>
                           <Button 

@@ -1,8 +1,9 @@
 import { Layout, Segmented } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { FileOutlined, SettingOutlined } from '@ant-design/icons';
+import { FileOutlined, SettingOutlined,AppstoreOutlined } from '@ant-design/icons';
 import hippoLogo from '../assets/hippo.webp';
 import styles from './MainLayout.module.css';
+
 
 const { Header, Content } = Layout;
 
@@ -23,6 +24,12 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         <Segmented
           size="large"
           options={[
+            { label: (
+              <div className={styles.segmentedItem}>
+                <AppstoreOutlined />
+                <span className={styles.segmentedText}>Dashboard</span>
+              </div>
+            ), value: '/' },
             { label: (
               <div className={styles.segmentedItem}>
                 <FileOutlined />

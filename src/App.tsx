@@ -16,9 +16,12 @@ import PublicInvoicePreview from './pages/PublicInvoicePreview';
 import React from 'react';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  
+  if (loading) return <p>Loading...</p>; // Prevents redirecting too early
   return user ? <>{children}</> : <Navigate to="/login" />;
 }
+
 
 function App() {
   return (

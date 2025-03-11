@@ -1,11 +1,12 @@
-import { Card, Descriptions, Table, Button, Space, message, Modal, Form, Select, Input, Tag } from 'antd';
+import { Card, Descriptions, Table, Button, Space, message, Modal, Form, Select, Input, Tag, Segmented, Dropdown, Menu } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../config/supabase';
 import InvoicePDF from '../components/InvoicePDF';
+import PaymentSection from '../components/PaymentSection';
 import * as ReactPDF from '@react-pdf/renderer';
-import { CheckOutlined, ArrowLeftOutlined, ShareAltOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ShareAltOutlined,  DownloadOutlined, MoreOutlined } from '@ant-design/icons';
 import { PDFViewer } from '@react-pdf/renderer';
 
 
@@ -16,6 +17,7 @@ interface Invoice {
   due_date: string;
   status: 'unpaid' | 'sent' | 'paid' | 'overdue' | 'cancelled';
   subtotal: number;
+  tax_type: string;
   tax_rate: number;
   tax_amount: number;
   total: number;
@@ -24,6 +26,8 @@ interface Invoice {
   customer_name?: string;
   payment_method?: string;
   payment_remarks?: string;
+  currency: string;
+  notes: string;
 }
 
 interface InvoiceItem {
@@ -51,21 +55,33 @@ interface CustomerData {
   address: string;
 }
 
+interface PaymentRecord {
+  id: string;
+  invoice_id: string;
+  amount: number;
+  payment_date: string;
+  payment_method: string;
+  payment_remarks?: string;
+}
+
 const InvoiceDetailContent = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [items, setItems] = useState<InvoiceItem[]>([]);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(false);
-  const [shareLoading, setShareLoading] = useState(false);
   const [isPaymentModalVisible, setIsPaymentModalVisible] = useState(false);
-  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
   const [isPreviewModalVisible, setIsPreviewModalVisible] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [activeTab, setActiveTab] = useState('invoice');
   const [paymentForm] = Form.useForm();
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [customerData, setCustomerData] = useState<CustomerData | null>(null);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+
+
+
 
   const fetchInvoiceDetails = useCallback(async () => {
     try {
@@ -84,6 +100,26 @@ const InvoiceDetailContent = () => {
           ...data,
           customer_name: data.customers?.name
         });
+
+        // Fetch company data
+        const { data: companyData, error: companyError } = await supabase
+          .from('companies')
+          .select('name, address, bank_name, bank_account, email, phone, logo_url')
+          .eq('id', data.company_id)
+          .single();
+
+        if (companyError) throw companyError;
+        setCompanyData(companyData);
+
+        // Fetch customer data
+        const { data: customerData, error: customerError } = await supabase
+          .from('customers')
+          .select('email, phone, address')
+          .eq('id', data.customer_id)
+          .single();
+
+        if (customerError) throw customerError;
+        setCustomerData(customerData);
       }
     } catch (error) {
       console.error('Error fetching invoice:', error);
@@ -106,12 +142,29 @@ const InvoiceDetailContent = () => {
     }
   }, [id]);
 
+  const fetchPayments = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('invoice_payments')
+        .select('*')
+        .eq('invoice_id', id)
+        .order('payment_date', { ascending: false });
+
+      if (error) throw error;
+      setPayments(data || []);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      message.error('Failed to fetch payment records');
+    }
+  }, [id]);
+
   useEffect(() => {
     if (id && user && id !== 'new') {
       fetchInvoiceDetails();
       fetchInvoiceItems();
+      fetchPayments();
     }
-  }, [id, user, fetchInvoiceDetails, fetchInvoiceItems]);
+  }, [id, user, fetchInvoiceDetails, fetchInvoiceItems, fetchPayments]);
 
   const handleDownloadPDF = async () => {
     if (!invoice) return;
@@ -145,9 +198,12 @@ const InvoiceDetailContent = () => {
             date: invoice.date,
             due_date: invoice.due_date,
             subtotal: invoice.subtotal,
+            tax_type: invoice.tax_type,
             tax_rate: invoice.tax_rate,
             tax_amount: invoice.tax_amount,
-            total: invoice.total
+            currency: invoice.currency,
+            total: invoice.total,
+            notes: invoice.notes
           }}
           company={companyData}
           customer={{
@@ -189,33 +245,31 @@ const InvoiceDetailContent = () => {
     }
   };
 
+  /*======================Preview PDF SPOILEDDDD===================//
   const handlePreviewPDF = async () => {
     if (!invoice) return;
     
     try {
       setLoading(true);
-      
-      // Fetch additional customer details
-      const { data: customerData, error: customerError } = await supabase
-        .from('customers')
-        .select('email, phone, address')
-        .eq('id', invoice?.customer_id)
-        .single();
+  
+      // Debugging: Log invoice ID
+      console.log("Invoice ID:", invoice.id);
+  
+      const { data: shareData, error: shareError } = await supabase
+        .rpc('generate_share_token', { invoice_id: invoice.id });
+  
+      if (shareError) {
+        console.error('Supabase RPC Error:', shareError);
+        throw new Error(shareError.message);
+      }
+  
+      console.log("Share Token Data:", shareData);
 
-      if (customerError) throw customerError;
-
-      // Fetch company details
-      const { data: companyData, error: companyError } = await supabase
-        .from('companies')
-        .select('name, address, bank_name, bank_account, email, phone, logo_url')
-        .eq('id', invoice.company_id)
-        .single();
-
-      if (companyError) throw companyError;
-
-      setCompanyData(companyData);
-      setCustomerData(customerData);
-      setIsPreviewModalVisible(true);
+     
+  
+      // Open the public preview in a new window
+      const previewUrl = `/preview/${shareData.token}`;
+      window.open(previewUrl, '_blank');
     } catch (error) {
       console.error('Error preparing PDF preview:', error);
       message.error('Failed to prepare PDF preview');
@@ -223,6 +277,7 @@ const InvoiceDetailContent = () => {
       setLoading(false);
     }
   };
+   */
 
 
   if (!invoice) return null;
@@ -277,35 +332,79 @@ const InvoiceDetailContent = () => {
   };
 
   const handleWhatsAppShare = async () => {
-    if (!invoice || !companyData) return;
+    if (!invoice || !companyData || !customerData) return;
 
     try {
       setLoading(true);
       
-      // Generate a share token for the invoice
-      const { data: shareData, error: shareError } = await supabase
-        .from('invoice_shares')
-        .insert([
-          {
-            invoice_id: invoice.id,
-            token: crypto.randomUUID(),
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days expiry
-          }
-        ])
-        .select()
-        .single();
+      // Create PDF document
+      const pdfContent = (
+        <InvoicePDF
+          invoice={{
+            invoice_number: invoice.invoice_number,
+            date: invoice.date,
+            due_date: invoice.due_date,
+            subtotal: invoice.subtotal,
+            tax_type: invoice.tax_type,
+            tax_rate: invoice.tax_rate,
+            tax_amount: invoice.tax_amount,
+            currency: invoice.currency,
+            total: invoice.total,
+            notes: invoice.notes
+          }}
+          company={companyData}
+          customer={{
+            name: invoice.customer_name || '',
+            address: customerData.address || '',
+            email: customerData.email || '',
+            phone: customerData.phone || ''
+          }}
+          items={items.map(item => ({
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            amount: item.amount
+          }))}
+        />
+      );
 
-      if (shareError) throw shareError;
+      // Generate PDF blob
+      const blob = await ReactPDF.pdf(pdfContent).toBlob();
+      const pdfFile = new File([blob], `invoice-${invoice.invoice_number}.pdf`, { type: 'application/pdf' });
 
-      // Create the public share URL
-      const shareUrl = `${window.location.origin}/invoice/share/${shareData.token}`;
+      // Format the message with invoice details
+      const messageText = `Invoice #${invoice.invoice_number} from ${companyData.name}\n\n`
+        + `Amount: ${invoice.currency} ${invoice.total.toFixed(2)}\n`
+        + `Due Date: ${invoice.due_date}\n\n`
+        + `Please contact us for any questions:\n`
+        + `Phone: ${companyData.phone}\n`
+        + `Email: ${companyData.email}`;
 
-      // Create WhatsApp share URL with company name and share link
-      const text = `Invoice ${invoice.invoice_number} from ${companyData.name}\n\nView invoice: ${shareUrl}`;
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      // Check if the Web Share API is available and supports files
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: `Invoice #${invoice.invoice_number}`,
+          text: messageText
+        });
+        message.success('Invoice shared successfully');
+      } else {
+        // Fallback to traditional WhatsApp sharing
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(messageText)}`;
+        window.open(whatsappUrl, '_blank');
 
-      // Open WhatsApp in a new window
-      window.open(whatsappUrl, '_blank');
+        // Also trigger PDF download
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `invoice-${invoice.invoice_number}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        message.success('Invoice downloaded and shared via WhatsApp');
+      }
     } catch (error) {
       console.error('Error sharing via WhatsApp:', error);
       message.error('Failed to share invoice via WhatsApp');
@@ -314,159 +413,149 @@ const InvoiceDetailContent = () => {
     }
   };
 
-  const handleShare = async () => {
+
+  //handle delete invoice===============================//
+  const handleDelete = () => {
+    setDeleteModalVisible(true);
+  };
+  
+  const handleDeleteConfirm = async () => {
     if (!invoice) return;
+  
     try {
-      setShareLoading(true);
-      
-      const { data, error } = await supabase
-        .from('invoice_shares')
-        .insert([{
-          invoice_id: invoice.id,
-          token: crypto.randomUUID(),
-          created_by: user?.id
-        }])
-        .select()
-        .single();
-
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoice.id);
+  
       if (error) throw error;
-
-      const shareUrl = `${window.location.origin}/hippo/#/invoice/share/${data.token}`;
-      setPreviewUrl(shareUrl);
-      setIsShareModalVisible(true);
-      message.success('Share link generated successfully');
+  
+      message.success('Invoice deleted successfully');
+      setDeleteModalVisible(false);
+      navigate(-1); // Navigate back after successful deletion
     } catch (error) {
-      console.error('Error sharing invoice:', error);
-      message.error('Failed to generate share link');
-    } finally {
-      setShareLoading(false);
+      console.error('Error deleting invoice:', error);
+      message.error('Failed to delete invoice');
     }
   };
 
+
+    //handle Dropdown menu============================//
+    const menu = (
+      <Menu>
+        <Menu.Item key="1" icon={<DownloadOutlined />} onClick={handleDownloadPDF}>
+          Download
+        </Menu.Item>
+        
+        <Menu.Item key="2" onClick={handleUnpaidSubmit}>
+          Mark as Unpaid
+        </Menu.Item>
+    
+        <Menu.Item key="3" onClick={handleDelete} danger>
+          Delete
+        </Menu.Item>
+      </Menu>
+    );
+
+
+    
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Button 
-          icon={<ArrowLeftOutlined />} 
-          onClick={() => navigate('/invoices')}
-        >
-          Back to Invoices
-        </Button>
-
-        <Card>
-          <Descriptions 
-            title="Invoice Details" 
-            bordered 
-            column={{ xxl: 4, xl: 3, lg: 3, md: 2, sm: 2, xs: 1 }}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Button 
+            type='text'
+            icon={<ArrowLeftOutlined />} 
+            onClick={() => navigate(-1)}
           >
-            <Descriptions.Item label="Invoice Number">{invoice?.invoice_number}</Descriptions.Item>
-            <Descriptions.Item label="Date">{invoice?.date}</Descriptions.Item>
-            <Descriptions.Item label="Due Date">{invoice?.due_date}</Descriptions.Item>
-            <Descriptions.Item label="Customer">{invoice?.customer_name}</Descriptions.Item>
-            <Descriptions.Item label="Status">
-              <Tag color={
-                invoice?.status === 'paid' ? 'success' :
-                invoice?.status === 'overdue' ? 'error' :
-                invoice?.status === 'sent' ? 'processing' :
-                'default'
-              }>
-                {invoice?.status?.toUpperCase()}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Payment Method">{invoice?.payment_method || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Payment Remarks">{invoice?.payment_remarks || '-'}</Descriptions.Item>
-          </Descriptions>
-        </Card>
-
-        <Card title="Items" styles={{ body: { padding: '0' } }}>
-          <div style={{ overflowX: 'auto' }}>
-            <Table
-            dataSource={items}
-            columns={[
-              {
-                title: 'Description',
-                dataIndex: 'description',
-                key: 'description',
-                ellipsis: true
-              },
-              {
-                title: 'Quantity',
-                dataIndex: 'quantity',
-                key: 'quantity',
-                width: 100
-              },
-              {
-                title: 'Unit Price',
-                dataIndex: 'unit_price',
-                key: 'unit_price',
-                width: 120,
-                render: (price: number) => `$${price.toFixed(2)}`,
-              },
-              {
-                title: 'Amount',
-                dataIndex: 'amount',
-                key: 'amount',
-                width: 120,
-                render: (amount: number) => `$${amount.toFixed(2)}`,
-              },
-            ]}
-            pagination={false}
-            summary={() => (
-              <Table.Summary>
-                <Table.Summary.Row>
-                  <Table.Summary.Cell index={0} colSpan={3}>Subtotal</Table.Summary.Cell>
-                  <Table.Summary.Cell index={1}>${invoice?.subtotal.toFixed(2)}</Table.Summary.Cell>
-                </Table.Summary.Row>
-                <Table.Summary.Row>
-                  <Table.Summary.Cell index={0} colSpan={3}>Tax ({invoice?.tax_rate}%)</Table.Summary.Cell>
-                  <Table.Summary.Cell index={1}>${invoice?.tax_amount.toFixed(2)}</Table.Summary.Cell>
-                </Table.Summary.Row>
-                <Table.Summary.Row>
-                  <Table.Summary.Cell index={0} colSpan={3}>Total</Table.Summary.Cell>
-                  <Table.Summary.Cell index={1}>${invoice?.total.toFixed(2)}</Table.Summary.Cell>
-                </Table.Summary.Row>
-              </Table.Summary>
-            )}
-          />
-          </div>
-        </Card>
-
-        <Space wrap>
-          <Button
-            type="primary"
-            onClick={() => handleDownloadPDF()}
-            loading={loading}
-          >
-            Download PDF
+            Back
           </Button>
-          <Button
+          <Space>
+            
+            
+            <Button
             icon={<ShareAltOutlined />}
-            onClick={handleShare}
-            loading={shareLoading}
+            onClick={handleWhatsAppShare}
           >
             Share
           </Button>
-          <Button
-            icon={<ShareAltOutlined />}
-            onClick={handleWhatsAppShare}
-            loading={loading}
-          >
-            Share via WhatsApp
-          </Button>
-          <Button
-            onClick={handlePreviewPDF}
-            loading={loading}
-          >
-            Preview PDF
-          </Button>
-          <Button
-            type="default"
-            icon={<CheckOutlined />}
-            onClick={() => invoice?.status === 'paid' ? handleUnpaidSubmit() : setIsPaymentModalVisible(true)}
-          >
-            {invoice?.status === 'paid' ? 'Mark as Unpaid' : 'Record Payment'}
-          </Button>
-        </Space>
+          
+          <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
+          <Button icon={<MoreOutlined />} />
+          </Dropdown>
+          </Space>
+        </div>
+
+        <Segmented
+          options={[
+            { label: 'Invoice Detail', value: 'invoice' },
+            { label: 'Payment', value: 'payment' }
+          ]}
+          value={activeTab}
+          onChange={(value) => setActiveTab(value.toString())}
+          style={{ marginBottom: '24px' }}
+        />
+
+        {activeTab === 'invoice' ? (
+          <>
+            <Card>
+              <Descriptions title="Invoice Information" bordered column={{ xxl: 4, xl: 3, lg: 3, md: 3, sm: 2, xs: 1 }}>
+                <Descriptions.Item label="Invoice Number">{invoice?.invoice_number}</Descriptions.Item>
+                <Descriptions.Item label="Date">{invoice?.date}</Descriptions.Item>
+                <Descriptions.Item label="Due Date">{invoice?.due_date}</Descriptions.Item>
+                <Descriptions.Item label="Status">
+                  <Tag color={invoice?.status === 'paid' ? 'green' : 'orange'}>
+                    {invoice?.status?.toUpperCase()}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Customer">{invoice?.customer_name}</Descriptions.Item>
+                <Descriptions.Item label="Subtotal">{invoice.currency}{invoice?.subtotal.toFixed(2)}</Descriptions.Item>
+                <Descriptions.Item label="Tax Rate">{invoice?.tax_rate}%</Descriptions.Item>
+                <Descriptions.Item label="Tax Amount">{invoice.currency}{invoice?.tax_amount.toFixed(2)}</Descriptions.Item>
+                <Descriptions.Item label="Total Amount">{invoice.currency}{invoice?.total.toFixed(2)}</Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            <Card title="Items" style={{ marginTop: '24px' }}>
+              <Table
+                dataSource={items}
+                columns={[
+                  {
+                    title: 'Description',
+                    dataIndex: 'description',
+                    key: 'description',
+                  },
+                  {
+                    title: 'Quantity',
+                    dataIndex: 'quantity',
+                    key: 'quantity',
+                  },
+                  {
+                    title: 'Unit Price',
+                    dataIndex: 'unit_price',
+                    key: 'unit_price',
+                    render: (value) => `${invoice.currency}${value.toFixed(2)}`,
+                  },
+                  {
+                    title: 'Amount',
+                    dataIndex: 'amount',
+                    key: 'amount',
+                    render: (value) => `${invoice.currency}${value.toFixed(2)}`,
+                  },
+                ]}
+                pagination={false}
+              />
+            </Card>
+          </>
+        ) : (
+          <PaymentSection
+            invoice={invoice}
+            payments={payments}
+            onPaymentAdded={fetchPayments}
+            fetchInvoiceDetails={fetchInvoiceDetails}
+          />
+        )}
+
 
         {companyData && (
           <Card title="Company Information" style={{ marginTop: '24px' }}>
@@ -511,27 +600,7 @@ const InvoiceDetailContent = () => {
         </Form>
       </Modal>
 
-      <Modal
-        title="Share Invoice"
-        open={isShareModalVisible}
-        onOk={() => {
-          navigator.clipboard.writeText(previewUrl).then(() => {
-            message.success('Share link copied to clipboard');
-            setIsShareModalVisible(false);
-          }).catch(() => {
-            message.error('Failed to copy link to clipboard');
-          });
-        }}
-        onCancel={() => setIsShareModalVisible(false)}
-        okText="Copy Link"
-      >
-        <p>Share this link to allow others to view the invoice:</p>
-        <Input 
-          value={previewUrl} 
-          readOnly 
-          style={{ width: '100%' }}
-        />
-      </Modal>
+
       <Modal
         title="Preview Invoice"
         open={isPreviewModalVisible}
@@ -549,8 +618,10 @@ const InvoiceDetailContent = () => {
                 date: invoice!.date,
                 due_date: invoice!.due_date,
                 subtotal: invoice!.subtotal,
+                tax_type: invoice!.tax_type,
                 tax_rate: invoice!.tax_rate,
                 tax_amount: invoice!.tax_amount,
+                currency:invoice!.currency,
                 total: invoice!.total
               }}
               company={companyData}
@@ -570,6 +641,16 @@ const InvoiceDetailContent = () => {
           </PDFViewer>
         )}
       </Modal>
+      <Modal
+      title="Delete Invoice"
+      open={deleteModalVisible}
+      onOk={handleDeleteConfirm}
+      onCancel={() => setDeleteModalVisible(false)}
+      okText="Delete"
+      okButtonProps={{ danger: true }}
+    >
+      <p>Are you sure you want to delete this invoice? This action cannot be undone.</p>
+    </Modal>
     </div>
   );
 };

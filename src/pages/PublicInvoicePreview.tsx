@@ -12,12 +12,15 @@ interface Invoice {
   date: string;
   due_date: string;
   subtotal: number;
+  tax_type: string;
   tax_rate: number;
   tax_amount: number;
   total: number;
   customer_id: string;
   company_id: string;
   customer_name?: string;
+  currency: string;
+  notes?: string;
   customers?: {
     name: string;
   };
@@ -88,9 +91,12 @@ const PublicInvoicePreview = () => {
             date,
             due_date,
             subtotal,
+            tax_type,
             tax_rate,
             tax_amount,
             total,
+            currency,
+            notes,
             customer_id,
             company_id,
             customers (name)
@@ -216,9 +222,12 @@ const PublicInvoicePreview = () => {
       date: invoice.date,
       due_date: invoice.due_date,
       subtotal: invoice.subtotal,
+      tax_type: invoice.tax_type || 'SST',
       tax_rate: invoice.tax_rate,
       tax_amount: invoice.tax_amount,
-      total: invoice.total
+      total: invoice.total,
+      currency: invoice.currency || 'MYR',
+      notes: invoice.notes
     },
     company: companyData,
     customer: {

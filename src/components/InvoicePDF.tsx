@@ -23,9 +23,12 @@ interface InvoicePDFProps {
     date: string;
     due_date: string;
     subtotal: number;
+    tax_type: string;
     tax_rate: number;
     tax_amount: number;
     total: number;
+    currency: string;
+    notes?: string;
   };
   company: Company;
   customer: {
@@ -55,7 +58,7 @@ const styles = StyleSheet.create({
     marginBottom: 10
   },
   companyName: {
-    fontSize: 20,
+    fontSize: 14,
     marginBottom: 10,
     color: '#333333'
   },
@@ -95,15 +98,9 @@ const styles = StyleSheet.create({
     fontSize: 9
   },
   descriptionCell: {
-    width: '35%',
+    width: '50%',
     borderRightWidth: 1,
     borderRightColor: '#f0f0f0'
-  },
-  dateCell: {
-    width: '15%',
-    borderRightWidth: 1,
-    borderRightColor: '#f0f0f0',
-    textAlign: 'center'
   },
   qtyCell: {
     width: '10%',
@@ -151,6 +148,7 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, ite
               <Image src={company.logo_url} style={styles.logo} />
             )}
             <Text style={styles.companyName}>{company.name}</Text>
+            <Text style={styles.text}>Bill To</Text>
             <Text style={styles.text}>{customer.name}</Text>
             <Text style={styles.text}>{customer.address}</Text>
             <Text style={styles.text}>{customer.email}</Text>
@@ -164,22 +162,20 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, ite
           </View>
         </View>
 
-        <Text style={styles.text}>Thank you for your business!</Text>
+        <Text style={styles.text}>{invoice.notes}</Text>
 
         <View style={styles.table}>
           <View style={[styles.tableRow, styles.tableHeader]}>
             <Text style={[styles.tableCell, styles.descriptionCell]}>Description</Text>
-            <Text style={[styles.tableCell, styles.dateCell]}>Date</Text>
             <Text style={[styles.tableCell, styles.qtyCell]}>Qty</Text>
             <Text style={[styles.tableCell, styles.priceCell]}>Unit price</Text>
-            <Text style={[styles.tableCell, styles.vatCell]}>VAT %</Text>
-            <Text style={[styles.tableCell, styles.totalCell]}>Total</Text>
+            <Text style={[styles.tableCell, styles.vatCell]}>{invoice.tax_type} %</Text>
+            <Text style={[styles.tableCell, styles.totalCell]}>Total ( {invoice.currency} )</Text>
           </View>
 
           {items.map((item, index) => (
             <View key={index} style={styles.tableRow}>
               <Text style={[styles.tableCell, styles.descriptionCell]}>{item.description}</Text>
-              <Text style={[styles.tableCell, styles.dateCell]}>{invoice.date}</Text>
               <Text style={[styles.tableCell, styles.qtyCell]}>{item.quantity}</Text>
               <Text style={[styles.tableCell, styles.priceCell]}>{item.unit_price.toFixed(2)}</Text>
               <Text style={[styles.tableCell, styles.vatCell]}>{invoice.tax_rate}%</Text>
@@ -188,17 +184,19 @@ const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, company, customer, ite
           ))}
 
           <View style={styles.tableRow}>
-            <Text style={[styles.tableCell, { textAlign: 'right', width: '90%' }]}>Total excl. VAT</Text>
+            <Text style={[styles.tableCell, { textAlign: 'right', width: '90%' }]}>Total excl. {invoice.tax_type}</Text>
             <Text style={[styles.tableCell, styles.totalCell]}>{invoice.subtotal.toFixed(2)}</Text>
           </View>
           <View style={styles.tableRow}>
-            <Text style={[styles.tableCell, { textAlign: 'right', width: '90%' }]}>VAT {invoice.tax_rate}%</Text>
+            <Text style={[styles.tableCell, { textAlign: 'right', width: '90%' }]}>{invoice.tax_type} {invoice.tax_rate}%</Text>
             <Text style={[styles.tableCell, styles.totalCell]}>{invoice.tax_amount.toFixed(2)}</Text>
           </View>
           <View style={styles.tableRow}>
             <Text style={[styles.tableCell, { textAlign: 'right', width: '90%' }]}>Total amount due</Text>
-            <Text style={[styles.tableCell, styles.totalCell]}>{invoice.total.toFixed(2)}</Text>
+            <Text style={[styles.tableCell, styles.totalCell]}>{invoice.currency} {invoice.total.toFixed(2)}</Text>
           </View>
+
+          
         </View>
       <View style={styles.footer}>
         <View style={{ flex: 1 }}>
