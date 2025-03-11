@@ -25,3 +25,6 @@ dist-ssr
 *.sw?
 
 .env
+tsconfig.node.json
+tsconfig.json
+src/pages/PublicInvoicePreview.tsx
