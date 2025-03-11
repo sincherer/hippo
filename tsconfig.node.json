@@ -8,13 +8,18 @@
       "strictNullChecks": true,
       "strictPropertyInitialization": true,
       "types": ["node", "jest"],
-      "target": "es5",
-      "lib": ["es2015", "dom"],
+      "target": "es2020",
+      "lib": ["es2020", "dom"],
+      "module": "es2020",
       "sourceMap": true,
       "outDir": "dist/lib",
       "declaration": true,
       "declarationDir": "dist/types",
-      "resolveJsonModule": true
+      "resolveJsonModule": true,
+      "jsx": "react-jsx",
+      "moduleResolution": "node",
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true
   },
   "include": [
       "src"

@@ -20,6 +20,8 @@ interface PaymentSectionProps {
   fetchInvoiceDetails: () => void;
 }
 
+
+
 const PaymentSection: React.FC<PaymentSectionProps> = ({ invoice, payments, onPaymentAdded, fetchInvoiceDetails }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [form] = Form.useForm();

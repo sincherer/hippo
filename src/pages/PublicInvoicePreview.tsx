@@ -173,14 +173,15 @@ const PublicInvoicePreview = () => {
           date: invoiceData.date,
           due_date: invoiceData.due_date,
           subtotal: invoiceData.subtotal,
+          tax_type: invoiceData.tax_type,
           tax_rate: invoiceData.tax_rate,
           tax_amount: invoiceData.tax_amount,
           total: invoiceData.total,
           customer_id: invoiceData.customer_id,
           company_id: invoiceData.company_id,
-          customer_name: invoiceData.customers?.[0]?.name
-
-
+          customer_name: invoiceData.customers?.[0]?.name,
+          currency: invoiceData.currency,
+          notes: invoiceData.notes
         });
         setItems(itemsData || []);
         setCompanyData(company);
