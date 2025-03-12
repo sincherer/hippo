@@ -232,7 +232,7 @@ const CreateInvoice = () => {
   };
 
   return (
-    <div style={{ width: '100vw' }}>
+    <div style={{ width: '100%' }}>
       <h2>Create New Invoice</h2>
       
         <Form 
