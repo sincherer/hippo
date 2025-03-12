@@ -156,7 +156,7 @@ const CustomerList = () => {
   };
 
   return (
-    <div style={{ width: '100vw', paddingRight:'110px' }}>
+    <div style={{ width: '100%'}}>
       <Space direction="horizontal" align="center" style={{ width: '100%', justifyContent: 'space-between', marginTop: '-16px' }} size="large">
         <h2 >Customer Management</h2>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsCreateModalVisible(true)}>

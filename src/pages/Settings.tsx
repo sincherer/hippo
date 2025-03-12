@@ -219,14 +219,15 @@ const Settings = () => {
   };
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto' }}>
       <Segmented
+        
+        value={activeSection}
+        onChange={(value) => setActiveSection(value as string)}
         options={[
           { label: 'Companies', value: 'companies' },
           { label: 'Customers', value: 'customers' }
         ]}
-        value={activeSection}
-        onChange={(value) => setActiveSection(value.toString())}
         style={{ marginBottom: 24 }}
       />
     {renderContent()}

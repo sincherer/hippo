@@ -17,7 +17,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   return (
     <Layout className={styles.layout}>
       <Header className={styles.header}>
-        <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
+        <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
           <img src={hippoLogo} alt="Hippo" style={{ height: 40, marginRight: 8, borderRadius: 50 }} />
           <span className={styles.hippoText} style={{ fontSize: 20, fontWeight: 'bold' }}>Hippo</span>
         </div>
@@ -29,7 +29,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                 <AppstoreOutlined />
                 <span className={styles.segmentedText}>Dashboard</span>
               </div>
-            ), value: '/' },
+            ), value: 'dashboard' },
             { label: (
               <div className={styles.segmentedItem}>
                 <FileOutlined />

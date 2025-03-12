@@ -246,7 +246,7 @@ const InvoiceList = () => {
   };
 
   return (
-    <div style={{ width: '100%', padding: '24px' }}>
+    <div style={{ width: '100vw', padding: '24px', maxWidth: '1200px', margin: '0 auto'  }}>
       <Space direction="vertical" style={{ width: '100%' }} size="large">
         <Space direction="horizontal" align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
           <h2 style={{ margin: 0 }}>Invoices</h2>

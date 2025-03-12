@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import hippoLogo from '../assets/hippo.webp';
 
+
 const { Text } = Typography;
 
 interface LoginForm {
@@ -21,7 +22,7 @@ const Login = () => {
       setLoading(true);
       await signIn(values.email, values.password);
       message.success('Login successful');
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       message.error('Failed to login. Please check your credentials.');
       console.error('Login error:', error);
@@ -53,7 +54,7 @@ const Login = () => {
               borderRadius: 50,
               cursor: 'pointer'
             }}
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
           />
           <h2 style={{ textAlign: 'center', marginBottom: 24 }}>Login to Hippo</h2>
         </div>

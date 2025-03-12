@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../config/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import moment from 'moment';
+import FeedbackModal from '../components/FeedbackModal';
 
 
 interface Customer {
@@ -35,6 +36,7 @@ const CreateInvoice = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [form] = Form.useForm();
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('');
   const [companies, setCompanies] = useState<{ id: string; name: string; }[]>([]);
@@ -192,12 +194,43 @@ const CreateInvoice = () => {
       }
   
       message.success('Invoice created successfully');
+
+      // Check if we should show the feedback modal
+      const { data: feedbackData } = await supabase
+        .from('user_feedback')
+        .select('invoice_count, feedback_skipped')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (!feedbackData) {
+        // First invoice, show feedback modal
+        setShowFeedbackModal(true);
+        await supabase
+          .from('user_feedback')
+          .insert([{ user_id: user?.id, invoice_count: 1 }]);
+      } else {
+        const newCount = (feedbackData.invoice_count || 0) + 1;
+        await supabase
+          .from('user_feedback')
+          .update({ invoice_count: newCount })
+          .eq('user_id', user?.id);
+
+        // Show feedback modal on third invoice if previously skipped
+        if (newCount === 3 && feedbackData.feedback_skipped) {
+          setShowFeedbackModal(true);
+        }
+      }
+
       navigate('/invoices');
     } catch (error) {
       console.error('Error creating invoice:', error);
       message.error(error instanceof Error ? error.message : 'Failed to create invoice');
     }
   };
+  const handleFeedbackClose = () => {
+    setShowFeedbackModal(false);
+  };
+
   return (
     <div style={{ width: '100vw' }}>
       <h2>Create New Invoice</h2>
@@ -576,6 +609,11 @@ const CreateInvoice = () => {
           </Form.Item>
         </Form>
       </Modal>
+      <FeedbackModal
+        visible={showFeedbackModal}
+        onClose={handleFeedbackClose}
+        onSkip={handleFeedbackClose}
+      />
     </div>
   );
 };

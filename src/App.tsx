@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Dashboard from './pages/Dashboard';
+import Landing from './pages/Landing';
 import CustomerList from './pages/CustomerList';
 import CreateCustomer from './pages/CreateCustomer';
 import InvoiceList from './pages/InvoiceList';
@@ -27,10 +28,11 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/invoice/share/:shareToken" element={<PublicInvoicePreview />} />
-        <Route path="/" element={<ProtectedRoute><MainLayout><Dashboard /></MainLayout></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><MainLayout><Dashboard /></MainLayout></ProtectedRoute>} />
         <Route path="/invoices" element={<ProtectedRoute><MainLayout><InvoiceList /></MainLayout></ProtectedRoute>} />
         <Route path="/invoices/new" element={<ProtectedRoute><MainLayout><CreateInvoice /></MainLayout></ProtectedRoute>} />
         <Route path="/invoices/:id" element={<ProtectedRoute><MainLayout><InvoiceDetail /></MainLayout></ProtectedRoute>} />

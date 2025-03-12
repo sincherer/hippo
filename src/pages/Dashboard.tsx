@@ -94,7 +94,7 @@ const Dashboard = () => {
   
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ width: '100%', padding: '24px' }}>
       <h2>Dashboard</h2>
       <p>🎉 Welcome to Hippo, {user?.user_metadata?.display_name || user?.email}</p>
       <Row gutter={[16, 16]}>
