@@ -1,0 +1,17 @@
+.invoice-table .ant-table-thead > tr > th {
+  background-color: #ffffff;
+  font-weight: 600;
+}
+
+.invoice-table .ant-table-tbody > tr > td {
+  padding: 8px;
+}
+
+.invoice-table {
+  margin-top: 8px;
+  margin-bottom: 16px;
+  width: 100%;
+  table-layout: fixed;
+  font-size: 12px;
+  border-radius: 10px;
+}
