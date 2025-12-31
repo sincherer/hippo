@@ -147,7 +147,7 @@ const Dashboard = () => {
           options={[
             { label: 'All', value: 'all' },
             { label: 'Paid', value: 'paid' },
-            { label: 'Unpaid', value: 'unpaid' }
+            { label: 'Draft', value: 'draft' }
           ]}
           value={filter}
           onChange={value => setFilter(value.toString())}
