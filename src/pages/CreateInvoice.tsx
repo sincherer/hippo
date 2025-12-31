@@ -152,7 +152,7 @@ const CreateInvoice = () => {
           user_id: user?.id,
           customer_id: values.customer_id,
           company_id: values.company_id,
-          status: 'unpaid',
+          status: 'draft',
           subtotal,
           tax_type: values.tax_type,
           tax_rate: values.tax_rate,
